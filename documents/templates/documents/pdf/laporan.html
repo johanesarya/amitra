@@ -1,0 +1,136 @@
+{% extends "documents/pdf/_dasar.html" %}
+{% block gaya %}
+  .sampul { text-align: center; margin-top: 5cm; }
+  .sampul .judul { font-size: 20pt; font-weight: bold; text-transform: uppercase; }
+  .daftar-isi a { color: #000; text-decoration: none; }
+  .daftar-isi a::after { content: leader('.') target-counter(attr(href), page); }
+  .daftar-isi li { list-style: none; margin: 0.3em 0; }
+  .lampiran-tilik { page: lanskap; }
+  @page lanskap { size: A4 landscape; }
+{% endblock %}
+{% block isi %}
+  <div class="sampul">
+    <div class="judul">{{ pengaturan.judul }}</div>
+    <p style="font-size: 14pt; margin-top: 1em">{{ unit }}</p>
+    <p>{{ periode }}</p>
+    <p style="margin-top: 2em">Nomor: {{ nomor.teks|default:"(belum diterbitkan)" }}</p>
+    <p style="margin-top: 4cm">{{ institusi.nama_institusi|default:"" }}<br>Lembaga Penjaminan Mutu</p>
+  </div>
+
+  <div class="halaman-baru">
+    <h2>Daftar Isi</h2>
+    <ul class="daftar-isi">
+      <li><a href="#pendahuluan">1. Pendahuluan</a></li>
+      <li><a href="#tujuan">2. Tujuan Audit</a></li>
+      <li><a href="#lingkup">3. Lingkup dan Tim Audit</a></li>
+      <li><a href="#jadwal">4. Jadwal</a></li>
+      <li><a href="#temuan">5. Temuan</a></li>
+      <li><a href="#kesimpulan">6. Kesimpulan</a></li>
+      <li><a href="#lampiran-a">Lampiran A. Daftar Tilik</a></li>
+      <li><a href="#lampiran-b">Lampiran B. Temuan</a></li>
+      <li><a href="#lampiran-c">Lampiran C. PTK</a></li>
+      <li><a href="#lampiran-d">Lampiran D. Verifikasi PTK periode lalu</a></li>
+    </ul>
+  </div>
+
+  <div class="halaman-baru">
+    <h2 id="pendahuluan">1. Pendahuluan</h2>
+    <p>
+      Audit Mutu Internal (AMI) {{ periode }} terhadap {{ unit }} dilaksanakan oleh Lembaga Penjaminan Mutu
+      sebagai bagian dari Sistem Penjaminan Mutu Internal (SPMI). Laporan ini memuat hasil evaluasi diri unit,
+      penilaian tim auditor, temuan, dan kesimpulan audit.
+    </p>
+
+    <h2 id="tujuan">2. Tujuan Audit</h2>
+    <table class="data">
+      <tr><th style="width: 6%"></th><th>Tujuan</th><th style="width: 15%">Tercapai</th></tr>
+      {% for t, tercapai in tujuan %}
+        <tr><td class="tengah">{{ t.kode }}</td><td>{{ t.teks }}</td><td class="tengah">{% if tercapai %}Ya{% else %}Tidak{% endif %}</td></tr>
+      {% empty %}
+        <tr><td colspan="3">Tujuan Audit belum ditetapkan LPM.</td></tr>
+      {% endfor %}
+    </table>
+
+    <h2 id="lingkup">3. Lingkup dan Tim Audit</h2>
+    {% include "documents/pdf/_identitas.html" %}
+
+    <h2 id="jadwal">4. Jadwal</h2>
+    <table class="data">
+      <tr><th>Tahap</th><th style="width: 22%">Mulai</th><th style="width: 22%">Selesai</th></tr>
+      {% for t in jadwal %}
+        <tr><td>{{ t.get_jenis_display }}</td><td>{{ t.tanggal_mulai|date:"j F Y" }}</td><td>{{ t.tanggal_selesai|date:"j F Y" }}</td></tr>
+      {% empty %}
+        <tr><td colspan="3">Jadwal belum diatur.</td></tr>
+      {% endfor %}
+    </table>
+
+    <h2 id="temuan">5. Temuan</h2>
+    <p>
+      Jumlah temuan: {{ kelebihan|length }} Kelebihan, {{ hasil.jumlah_kts|default:0 }} KTS, {{ hasil.jumlah_ob|default:0 }} OB,
+      dan {{ peluang|length }} Peluang Peningkatan.
+      {% if not kts_ob %}<strong>Tidak ada temuan KTS/OB</strong>, sehingga tidak ada PTK.{% endif %}
+      Rincian pada Lampiran B.
+    </p>
+
+    <h2 id="kesimpulan">6. Kesimpulan</h2>
+    {% if kesimpulan %}
+      <table class="data">
+        <tr><th style="width: 35%">Kesimpulan</th><th style="width: 18%">Penilaian</th><th>Penjelasan</th></tr>
+        <tr><td>A. Sistem dokumentasi</td><td>{{ kesimpulan.skor_a }} · {{ label_a }}</td><td class="pre">{{ kesimpulan.penjelasan_a }}</td></tr>
+        <tr><td>B. Implementasi SPMI</td><td>{{ kesimpulan.skor_b }} · {{ label_b }}</td><td class="pre">{{ kesimpulan.penjelasan_b }}</td></tr>
+        <tr><td>C. Tindak lanjut PTK periode lalu</td><td>{% if kesimpulan.c_tidak_berlaku %}Tidak berlaku{% else %}{{ kesimpulan.skor_c }} · {{ label_c }}{% endif %}</td><td class="pre">{{ kesimpulan.penjelasan_c }}</td></tr>
+      </table>
+    {% endif %}
+    {% if hasil %}
+      <table class="data">
+        <tr><th>Nilai efektif (NE)</th><th>Status KKM</th><th>Nilai kesimpulan (NK)</th><th>Hasil akhir</th></tr>
+        <tr>
+          <td class="tengah">{{ hasil.ne }}</td>
+          <td class="tengah">{% if hasil.memenuhi_kkm %}Memenuhi KKM{% else %}Belum Memenuhi KKM{% endif %}</td>
+          <td class="tengah">{{ hasil.nk|default:"—" }}</td>
+          <td class="tengah">{% if hasil.hasil_akhir is None %}Menunggu keputusan LPM{% else %}{{ hasil.hasil_akhir }}{% endif %}</td>
+        </tr>
+      </table>
+    {% endif %}
+    {% include "documents/pdf/_ttd.html" %}
+  </div>
+
+  <div class="halaman-baru lampiran-tilik">
+    <h2 id="lampiran-a">Lampiran A. Daftar Tilik</h2>
+    {% include "documents/pdf/_isi_daftar_tilik.html" %}
+  </div>
+
+  <div class="halaman-baru">
+    <h2 id="lampiran-b">Lampiran B. Temuan</h2>
+    {% include "documents/pdf/_isi_temuan.html" %}
+
+    <h2 id="lampiran-c">Lampiran C. PTK</h2>
+    <table class="data">
+      <tr><th style="width: 15%">Kode</th><th style="width: 30%">Nomor surat</th><th>Butir</th></tr>
+      {% for p in daftar_ptk %}
+        <tr><td>{{ p.kode }}</td><td>{{ p.nomor_surat|default:"—" }}</td><td>{{ p.temuan.pernyataan.kode }} {{ p.temuan.pernyataan.pernyataan|truncatechars:90 }}</td></tr>
+      {% empty %}
+        <tr><td colspan="3">Tidak ada temuan KTS/OB.</td></tr>
+      {% endfor %}
+    </table>
+
+    <h2 id="lampiran-d">Lampiran D. Verifikasi PTK periode lalu</h2>
+    {% if ptk_lalu %}
+      <table class="data">
+        <tr><th style="width: 11%">Kode</th><th style="width: 9%">Butir</th><th>Rencana</th><th>Realisasi</th><th style="width: 12%">Hasil</th><th>Catatan verifikasi</th></tr>
+        {% for p in ptk_lalu %}
+          <tr>
+            <td>{{ p.kode }}<br><span class="kecil">{{ p.audit.periode.tahun_akademik }}</span></td>
+            <td>{{ p.temuan.pernyataan.kode }}</td>
+            <td class="pre">{{ p.rencana_tindakan|default:"—" }}</td>
+            <td class="pre">{{ p.realisasi|default:"—" }}</td>
+            <td>{% if p.sudah_diverifikasi %}{{ p.get_status_display }}{% else %}Belum diverifikasi{% endif %}</td>
+            <td class="pre">{{ p.catatan_verifikasi|default:"—" }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p>Unit ini tidak memiliki PTK dari periode lalu.</p>
+    {% endif %}
+  </div>
+{% endblock %}

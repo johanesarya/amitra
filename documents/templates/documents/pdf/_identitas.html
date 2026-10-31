@@ -1,0 +1,10 @@
+<table class="info">
+  <tr><td>Periode</td><td>: {{ periode }}</td></tr>
+  <tr><td>Unit (auditee)</td><td>: {{ unit }} ({{ unit.tipe }}){% if unit.induk %} · {{ unit.induk }}{% endif %}</td></tr>
+  <tr><td>Pimpinan unit</td><td>: {{ unit.nama_pimpinan|default:"—" }}{% if unit.npp_pimpinan %} (NPP {{ unit.npp_pimpinan }}){% endif %}</td></tr>
+  <tr><td>Lingkup</td><td>: {% for l in lingkup %}{{ l }}{% if not forloop.last %}, {% endif %}{% endfor %}</td></tr>
+  <tr><td>Auditee</td><td>: {{ auditee|default:"—" }}</td></tr>
+  <tr><td>Ketua auditor</td><td>: {{ ketua|default:"—" }}</td></tr>
+  <tr><td>Anggota auditor</td><td>: {% for a in anggota %}{{ a }}{% if not forloop.last %}; {% endif %}{% endfor %}</td></tr>
+  <tr><td>Audit Lapangan</td><td>: {{ audit.jadwal_audit_lapangan|date:"l, j F Y, \p\u\k\u\l H.i"|default:"belum dijadwalkan" }}</td></tr>
+</table>

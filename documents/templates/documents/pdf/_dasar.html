@@ -1,0 +1,51 @@
+{% load dokumen %}<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>{{ pengaturan.judul }} — {{ unit }}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 1.8cm 1.8cm 2.2cm;
+      @bottom-left { content: "{{ pengaturan.nomor_formulir|css_teks }}"; font-size: 8pt; color: #444; }
+      @bottom-right { content: "Halaman " counter(page) " dari " counter(pages); font-size: 8pt; color: #444; }
+    }
+    body { font-family: "Times New Roman", "Liberation Serif", serif; font-size: 11pt; line-height: 1.35; color: #000; }
+    h1 { font-size: 14pt; text-align: center; margin: 0.6em 0 0.2em; text-transform: uppercase; }
+    h2 { font-size: 12pt; margin: 1.2em 0 0.4em; }
+    h3 { font-size: 11pt; margin: 1em 0 0.3em; }
+    p { margin: 0.3em 0; }
+    .kop { width: 100%; border-bottom: 3px double #000; margin-bottom: 0.6em; }
+    .kop td { border: none; vertical-align: middle; padding: 0 0 6px; }
+    .kop img { height: 60px; }
+    .kop .nama { font-size: 14pt; font-weight: bold; }
+    .kop .teks { font-size: 9pt; white-space: pre-line; }
+    .nomor { text-align: center; margin-bottom: 1em; }
+    table.data { width: 100%; border-collapse: collapse; margin: 0.4em 0; }
+    table.data th, table.data td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; font-size: 9.5pt; }
+    table.data th { background: #e8e8e8; }
+    table.info td { border: none; padding: 2px 6px 2px 0; vertical-align: top; }
+    .kecil { font-size: 8.5pt; }
+    .tengah { text-align: center; }
+    .halaman-baru { page-break-before: always; }
+    .ttd { width: 100%; margin-top: 2em; }
+    .ttd td { border: none; width: 50%; text-align: center; vertical-align: top; padding-top: 0.5em; }
+    .ttd .ruang { height: 2.2cm; }
+    .pre { white-space: pre-line; }
+    {% block gaya %}{% endblock %}
+  </style>
+</head>
+<body>
+  <table class="kop">
+    <tr>
+      {% if logo %}<td style="width: 75px"><img src="{{ logo }}" alt=""></td>{% endif %}
+      <td>
+        <div class="nama">{{ institusi.nama_institusi|default:"Lembaga Penjaminan Mutu" }}</div>
+        <div>Lembaga Penjaminan Mutu</div>
+        {% if institusi.kop %}<div class="teks">{{ institusi.kop }}</div>{% endif %}
+      </td>
+    </tr>
+  </table>
+  {% block isi %}{% endblock %}
+</body>
+</html>

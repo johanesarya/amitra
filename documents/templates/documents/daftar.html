@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block head_title %}Dokumen {{ audit.unit }}{% endblock head_title %}
+
+{% block content %}
+  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
+  <h1 class="mt-2 text-2xl font-bold text-slate-900">Dokumen</h1>
+  <p class="mt-1 text-sm text-slate-600">{{ audit.unit }} · {{ audit.periode }} · {{ audit.get_status_display }}</p>
+  {% include "documents/_daftar.html" %}
+{% endblock content %}

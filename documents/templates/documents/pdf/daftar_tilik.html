@@ -1,0 +1,7 @@
+{% extends "documents/pdf/_dasar.html" %}
+{% block gaya %}@page { size: A4 landscape; }{% endblock %}
+{% block isi %}
+  <h1>{{ pengaturan.judul }}</h1>
+  {% include "documents/pdf/_identitas.html" %}
+  {% include "documents/pdf/_isi_daftar_tilik.html" %}
+{% endblock %}

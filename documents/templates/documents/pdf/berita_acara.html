@@ -1,0 +1,26 @@
+{% extends "documents/pdf/_dasar.html" %}
+{% block isi %}
+  <h1>{{ pengaturan.judul }}</h1>
+  <p class="nomor">Nomor: {{ nomor.teks|default:"(belum diterbitkan)" }}</p>
+  <p>
+    Pada {{ audit.jadwal_audit_lapangan|date:"l, j F Y, \p\u\k\u\l H.i"|default:"tanggal yang telah ditetapkan" }}
+    telah dilaksanakan Audit Lapangan Audit Mutu Internal dengan rincian sebagai berikut.
+  </p>
+  {% include "documents/pdf/_identitas.html" %}
+  {% if cp_lpm %}<p>CP LPM: {{ cp_lpm.get_full_name }}</p>{% endif %}
+  <h2>Hasil</h2>
+  <table class="data">
+    <tr><th></th><th>Deviasi (D)</th><th>Nilai efektif (NE)</th></tr>
+    {% if hasil_awal %}<tr><td>Sebelum Audit Lapangan</td><td>{{ hasil_awal.deviasi }}</td><td>{{ hasil_awal.ne }}</td></tr>{% endif %}
+    {% if hasil_al %}<tr><td>Setelah Audit Lapangan</td><td>{{ hasil_al.deviasi }}</td><td>{{ hasil_al.ne }}</td></tr>{% endif %}
+  </table>
+  <h2>Catatan follow-up</h2>
+  <p class="pre">{{ audit.catatan_follow_up|default:"—" }}</p>
+  <h2>Peserta</h2>
+  <table class="data">
+    <tr><th style="width: 6%">No.</th><th>Nama</th><th style="width: 25%">Peran</th><th style="width: 25%">Tanda tangan</th></tr>
+    {% for p in tim %}
+      <tr><td class="tengah">{{ forloop.counter }}</td><td>{{ p.pengguna }}</td><td>{% if p.ketua %}Ketua auditor{% else %}{{ p.get_peran_display }}{% endif %}</td><td style="height: 1cm"></td></tr>
+    {% endfor %}
+  </table>
+{% endblock %}

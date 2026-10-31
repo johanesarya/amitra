@@ -1,0 +1,20 @@
+{% extends "documents/pdf/_dasar.html" %}
+{% block isi %}
+  <h1>{{ pengaturan.judul }}</h1>
+  <p class="nomor">Nomor: {{ nomor.teks|default:"(belum diterbitkan)" }} · {{ ptk.kode }}</p>
+  {% include "documents/pdf/_identitas.html" %}
+  <table class="data">
+    <tr><th style="width: 28%">Kategori temuan</th><td>{{ ptk.temuan.get_jenis_display }}</td></tr>
+    <tr><th>Standar</th><td>{{ ptk.temuan.pernyataan.standar.kode }} {{ ptk.temuan.pernyataan.standar.nama }}</td></tr>
+    <tr><th>Pernyataan standar</th><td>{{ ptk.temuan.pernyataan.kode }} {{ ptk.temuan.pernyataan.pernyataan }}</td></tr>
+    <tr><th>Uraian temuan</th><td class="pre">{{ ptk.temuan.uraian }}</td></tr>
+    <tr><th>Akar masalah</th><td class="pre">{{ ptk.akar_masalah|default:"(diisi auditee)" }}</td></tr>
+    <tr><th>Rencana tindakan koreksi</th><td class="pre">{{ ptk.rencana_tindakan|default:"(diisi auditee)" }}</td></tr>
+    <tr><th>Target selesai</th><td>{{ ptk.target_tanggal|date:"j F Y"|default:"—" }}</td></tr>
+    <tr><th>Penanggung jawab (PIC)</th><td>{{ ptk.pic|default:"—" }}</td></tr>
+    <tr><th>Realisasi tindak lanjut</th><td class="pre">{{ ptk.realisasi|default:"—" }}</td></tr>
+    <tr><th>Verifikasi tindak lanjut</th><td>{{ ptk.get_status_display }}{% if ptk.sudah_diverifikasi %}
+      — {{ ptk.catatan_verifikasi }} ({{ ptk.diverifikasi_oleh }}, {{ ptk.diverifikasi_pada|date:"j F Y" }}){% endif %}</td></tr>
+  </table>
+  {% include "documents/pdf/_ttd.html" %}
+{% endblock %}

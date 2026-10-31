@@ -1,0 +1,27 @@
+<h3>A. Kelebihan</h3>
+<table class="data">
+  <tr><th style="width: 6%">No.</th><th style="width: 12%">Butir</th><th>Uraian</th></tr>
+  {% for t in kelebihan %}
+    <tr><td class="tengah">{{ forloop.counter }}</td><td>{{ t.pernyataan.kode }}</td><td class="pre">{{ t.uraian }}</td></tr>
+  {% empty %}
+    <tr><td colspan="3">Tidak ada.</td></tr>
+  {% endfor %}
+</table>
+<h3>B. Ketidaksesuaian (KTS) dan Observasi (OB)</h3>
+<table class="data">
+  <tr><th style="width: 13%">Kode PTK</th><th style="width: 8%">Jenis</th><th style="width: 12%">Butir</th><th>Uraian</th></tr>
+  {% for t in kts_ob %}
+    <tr><td>{% if t.ptk %}{{ t.ptk.kode }}{% endif %}</td><td>{% if t.jenis == "KTS" %}KTS{% else %}OB{% endif %}</td><td>{{ t.pernyataan.kode }}</td><td class="pre">{{ t.uraian }}</td></tr>
+  {% empty %}
+    <tr><td colspan="4">Tidak ada temuan KTS/OB.</td></tr>
+  {% endfor %}
+</table>
+<h3>C. Peluang Peningkatan</h3>
+<table class="data">
+  <tr><th style="width: 6%">No.</th><th>Uraian</th></tr>
+  {% for t in peluang %}
+    <tr><td class="tengah">{{ forloop.counter }}</td><td class="pre">{{ t.uraian }}</td></tr>
+  {% empty %}
+    <tr><td colspan="2">Tidak ada.</td></tr>
+  {% endfor %}
+</table>

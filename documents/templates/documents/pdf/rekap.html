@@ -1,0 +1,35 @@
+{% extends "documents/pdf/_dasar.html" %}
+{% block gaya %}@page { size: A4 landscape; }{% endblock %}
+{% block isi %}
+  <h1>Rekapitulasi Audit Mutu Internal</h1>
+  <p class="nomor">{{ periode }} · audit Final · dicetak {{ tanggal_cetak|date:"j F Y" }}</p>
+
+  <h2>Rekap per unit</h2>
+  <table class="data">
+    <tr><th>No.</th><th>Unit</th><th>Tipe</th><th>Fakultas</th><th>D</th><th>NE</th><th>Status KKM</th><th>NK</th><th>Hasil akhir</th><th>Kelebihan</th><th>KTS</th><th>OB</th><th>PTK</th></tr>
+    {% for b in baris %}
+      <tr>
+        <td class="tengah">{{ forloop.counter }}</td><td>{{ b.unit }}</td><td>{{ b.unit.tipe }}</td><td>{{ b.fakultas|default:"" }}</td>
+        <td>{{ b.deviasi|default:"—" }}</td><td>{{ b.ne|default:"—" }}</td>
+        <td>{% if b.memenuhi_kkm %}Memenuhi{% elif b.memenuhi_kkm is None %}—{% else %}Belum memenuhi{% endif %}</td>
+        <td>{{ b.nk|default:"—" }}</td><td>{% if b.hasil_akhir is None %}Menunggu LPM{% else %}{{ b.hasil_akhir }}{% endif %}</td>
+        <td>{{ b.kelebihan }}</td><td>{{ b.kts }}</td><td>{{ b.ob }}</td><td>{{ b.ptk_total }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="13">Belum ada audit Final.</td></tr>
+    {% endfor %}
+  </table>
+
+  {% if butir.baris %}
+    <h2 class="halaman-baru">Skor per butir standar</h2>
+    <p class="kecil">Rata-rata skor kategori final (skala 1–{{ butir.skor_maks }}); garis putus-putus = skor Sesuai.</p>
+    <div>{{ svg_butir }}</div>
+    <table class="data">
+      <tr><th>Butir</th><th>Pernyataan</th><th>Rata-rata</th><th>KTS</th><th>OB</th><th>Sesuai</th><th>Pelampauan</th><th>n</th></tr>
+      {% for r in butir.baris %}
+        <tr><td>{{ r.butir.kode }}</td><td>{{ r.butir.pernyataan|truncatechars:110 }}</td><td>{{ r.rata }}</td>
+          <td>{{ r.jumlah.KTS }}</td><td>{{ r.jumlah.OB }}</td><td>{{ r.jumlah.SESUAI }}</td><td>{{ r.jumlah.PELAMPAUAN }}</td><td>{{ r.n }}</td></tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+{% endblock %}

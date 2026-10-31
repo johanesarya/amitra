@@ -1,0 +1,81 @@
+{% comment %}FR-41: status diperbarui otomatis selama ada dokumen yang diproses, tanpa klik ulang.{% endcomment %}
+<div id="daftar-dokumen" class="mt-6 space-y-6"
+     {% if masih_diproses %}hx-get="{% url 'documents:daftar' audit.pk %}" hx-trigger="every 3s" hx-swap="outerHTML"{% endif %}>
+  <section class="kartu overflow-x-auto p-0" aria-labelledby="judul-dokumen">
+    <h2 id="judul-dokumen" class="sr-only">Daftar dokumen</h2>
+    <table class="w-full min-w-[720px] text-left text-sm">
+      <thead class="border-b border-slate-200 bg-slate-50 text-slate-700">
+        <tr>
+          <th scope="col" class="px-4 py-3 font-semibold">Dokumen</th>
+          <th scope="col" class="px-4 py-3 font-semibold">Nomor surat</th>
+          <th scope="col" class="px-4 py-3 font-semibold">Status</th>
+          <th scope="col" class="px-4 py-3 font-semibold">Unduh</th>
+          <th scope="col" class="px-4 py-3 font-semibold">Scan bertanda tangan</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for d in dokumen %}
+          <tr class="align-top">
+            <td class="px-4 py-3 font-medium text-slate-900">{{ d.judul }}{% if d.versi > 1 %} <span class="text-xs font-normal text-slate-500">v{{ d.versi }}</span>{% endif %}</td>
+            <td class="px-4 py-3 text-slate-700">{% with n=d.nomor_aktif %}{{ n.teks|default:"—" }}{% endwith %}</td>
+            <td class="px-4 py-3" aria-live="polite">
+              {% if d.status == "SIAP" %}<span class="text-green-700">Siap</span> <span class="text-xs text-slate-500">{{ d.selesai_pada|date:"j M H.i" }}</span>
+              {% elif d.status == "GAGAL" %}<span class="font-medium text-red-700">Gagal</span>{% if bisa_kelola %}<p class="mt-1 max-w-xs text-xs text-red-700">{{ d.galat|truncatechars:200 }}</p>{% endif %}
+              {% else %}<span class="text-amber-700">{{ d.get_status_display }}…</span>{% endif %}
+              {% if bisa_kelola and not d.sedang_dibuat %}
+                <form method="post" action="{% url 'documents:buat_ulang' audit.pk d.pk %}" class="mt-1">{% csrf_token %}<button type="submit" class="text-xs text-blue-800 underline">Buat ulang</button></form>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3">
+              {% if d.berkas %}<a href="{% url 'documents:unduh' audit.pk d.pk 'pdf' %}" class="text-blue-800 underline">PDF</a>{% endif %}
+              {% if d.berkas_excel %} · <a href="{% url 'documents:unduh' audit.pk d.pk 'excel' %}" class="text-blue-800 underline">Excel</a>{% endif %}
+              {% if not d.berkas %}—{% endif %}
+            </td>
+            <td class="px-4 py-3">
+              {% if d.scan %}
+                <a href="{% url 'documents:unduh' audit.pk d.pk 'scan' %}" class="text-blue-800 underline">Unduh scan</a>
+                <p class="text-xs text-slate-500">{{ d.scan_oleh }} · {{ d.scan_pada|date:"j M Y" }}</p>
+              {% endif %}
+              {% if bisa_scan and d.berkas %}
+                <form method="post" action="{% url 'documents:unggah_scan' audit.pk d.pk %}" enctype="multipart/form-data" class="mt-1 flex flex-wrap items-center gap-2">
+                  {% csrf_token %}
+                  <label><span class="sr-only">Scan {{ d.judul }}</span><input type="file" name="scan" accept=".pdf" required class="max-w-48 text-xs"></label>
+                  <button type="submit" class="tombol-kedua px-2 py-1 text-xs">{% if d.scan %}Ganti{% else %}Unggah{% endif %}</button>
+                </form>
+              {% elif not d.scan %}—{% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="px-4 py-6 text-center text-slate-600">Belum ada dokumen. Profil Auditee dibuat saat audit diplot; dokumen lain dibuat saat hasil Final.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  {% if bisa_nomor %}
+    <section class="kartu space-y-3" aria-labelledby="judul-nomor">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="judul-nomor" class="text-lg font-semibold text-slate-900">Nomor surat</h2>
+        {% if nomor_bisa_terbit %}
+          <form method="post" action="{% url 'documents:terbitkan_nomor' audit.pk %}">{% csrf_token %}<button type="submit" class="tombol-kedua px-3 py-1.5">Terbitkan nomor yang belum ada</button></form>
+        {% endif %}
+      </div>
+      <p class="text-sm text-slate-600">
+        {% if nomor_terkunci %}Audit sudah Final; nomor surat terkunci.{% else %}Nomor dapat dikoreksi sampai hasil audit Final (FR-39).{% endif %}
+      </p>
+      <ul class="divide-y divide-slate-100 text-sm">
+        {% for n in nomor_surat %}
+          <li class="flex flex-wrap items-center justify-between gap-2 py-2 {% if n.status == 'BATAL' %}text-slate-400 line-through{% endif %}">
+            <span><span class="font-medium">{{ n.teks }}</span> · {{ n.get_jenis_display }}{% if n.ptk %} {{ n.ptk.kode }}{% endif %}{% if n.status == "BATAL" %} (batal){% endif %}</span>
+            <span class="text-xs text-slate-500">
+              {% if n.dikoreksi_oleh %}dikoreksi {{ n.dikoreksi_oleh }}: {{ n.alasan_koreksi }}{% endif %}
+              {% if not nomor_terkunci and n.status == "AKTIF" %}<a href="{% url 'documents:koreksi_nomor' audit.pk n.pk %}" class="ml-2 text-blue-800 underline">Koreksi</a>{% endif %}
+            </span>
+          </li>
+        {% empty %}
+          <li class="py-2 text-slate-600">Belum ada nomor surat.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+</div>

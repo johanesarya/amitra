@@ -1,0 +1,7 @@
+{% extends "documents/pdf/_dasar.html" %}
+{% block isi %}
+  <h1>{{ pengaturan.judul }}</h1>
+  {% include "documents/pdf/_identitas.html" %}
+  {% include "documents/pdf/_isi_temuan.html" %}
+  {% include "documents/pdf/_ttd.html" %}
+{% endblock %}

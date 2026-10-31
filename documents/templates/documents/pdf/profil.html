@@ -1,0 +1,14 @@
+{% extends "documents/pdf/_dasar.html" %}
+{% block isi %}
+  <h1>{{ pengaturan.judul }}</h1>
+  <p class="nomor">Identitas Audit Mutu Internal</p>
+  {% include "documents/pdf/_identitas.html" %}
+  <h2>Tim audit</h2>
+  <table class="data">
+    <tr><th style="width: 6%">No.</th><th>Nama</th><th style="width: 30%">Peran</th></tr>
+    {% for p in tim %}
+      <tr><td class="tengah">{{ forloop.counter }}</td><td>{{ p.pengguna }}</td><td>{% if p.ketua %}Ketua auditor{% else %}{{ p.get_peran_display }}{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+  <p class="kecil">Dicetak {{ tanggal_cetak|date:"j F Y" }} oleh SI-AMI.</p>
+{% endblock %}
