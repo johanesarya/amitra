@@ -1,5 +1,6 @@
 """Halaman dokumen per audit: status pembuatan, unduhan, scan bertanda tangan, nomor surat (FR-39 s.d. FR-43)."""
 
+from datetime import timedelta
 from pathlib import Path
 
 from django import forms
@@ -21,6 +22,7 @@ from . import tugas
 from .models import Dokumen, NomorSurat
 
 S = Audit.Status
+BATAS_TERTAHAN = timedelta(minutes=2)
 STATUS_NOMOR_TERBIT = frozenset({S.MENUNGGU_PERSETUJUAN, S.FINAL, S.TINDAK_LANJUT_PTK, S.DITUTUP})
 
 
@@ -38,10 +40,13 @@ def _bisa_scan(request, penugasan):
 def daftar(request, pk):
     audit, penugasan = _akses(request, pk)
     dokumen = list(audit.dokumen.select_related("ptk", "scan_oleh"))
+    batas = timezone.now() - BATAS_TERTAHAN
     konteks = {
         "audit": audit,
         "dokumen": dokumen,
         "masih_diproses": any(d.sedang_dibuat for d in dokumen),
+        # Diantre terlalu lama biasanya berarti worker antrean (qcluster) tidak berjalan.
+        "tertahan": any(d.status == Dokumen.Status.DIANTRE and d.diminta_pada and d.diminta_pada < batas for d in dokumen),
         "bisa_kelola": request.user.has_perm("documents.change_dokumen"),
         "bisa_scan": _bisa_scan(request, penugasan),
         "bisa_nomor": request.user.has_perm("documents.change_nomorsurat"),

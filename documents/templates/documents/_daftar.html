@@ -1,6 +1,16 @@
 {% comment %}FR-41: status diperbarui otomatis selama ada dokumen yang diproses, tanpa klik ulang.{% endcomment %}
 <div id="daftar-dokumen" class="mt-6 space-y-6"
      {% if masih_diproses %}hx-get="{% url 'documents:daftar' audit.pk %}" hx-trigger="every 3s" hx-swap="outerHTML"{% endif %}>
+  {% if tertahan %}
+    <p class="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+      {% if bisa_kelola %}
+        Dokumen belum diproses lebih dari 2 menit. Pastikan worker antrean berjalan
+        (<code>python manage.py qcluster</code>); dokumen akan dibuat otomatis begitu worker aktif.
+      {% else %}
+        Dokumen sedang disiapkan dan akan tersedia otomatis. Bila lama tidak tersedia, hubungi Admin LPM.
+      {% endif %}
+    </p>
+  {% endif %}
   <section class="kartu overflow-x-auto p-0" aria-labelledby="judul-dokumen">
     <h2 id="judul-dokumen" class="sr-only">Daftar dokumen</h2>
     <table class="w-full min-w-[720px] text-left text-sm">

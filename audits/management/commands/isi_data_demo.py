@@ -21,6 +21,7 @@ from audits.models import Audit
 from findings import layanan as temuan
 from findings import tindak_lanjut
 from masterdata.models import (
+    KategoriSurat,
     LingkupBidang,
     PengaturanInstitusi,
     PengaturanPeriode,
@@ -37,6 +38,11 @@ PASSWORD = "demo-siami-2026"
 DOMAIN = "demo.local"
 TAUTAN = "https://drive.google.com/file/d/contoh-bukti/view"
 SKOR = {1: "KTS", 2: "OB", 3: "SESUAI", 4: "PELAMPAUAN"}
+URAIAN = {
+    "KELEBIHAN": "Pelaksanaan butir {kode} melampaui standar: dokumen lengkap, dievaluasi rutin, dan hasilnya dipublikasikan.",
+    "KTS": "Dokumen pendukung butir {kode} tidak tersedia dan pelaksanaannya belum dapat dibuktikan.",
+    "OB": "Pelaksanaan butir {kode} sudah berjalan, tetapi dokumen pendukungnya belum lengkap.",
+}
 T = TipeUnit
 
 STANDAR = [
@@ -62,18 +68,37 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--paksa", action="store_true", help="Jalankan walau DEBUG=False (staging).")
+        parser.add_argument("--tanpa-dokumen", action="store_true", help="Lewati pembuatan PDF/Excel dokumen demo.")
 
     def handle(self, *args, **options):
         if not settings.DEBUG and not options["paksa"]:
             raise CommandError("DEBUG=False. Data demo tidak boleh masuk produksi; pakai --paksa hanya di staging.")
         if User.objects.filter(email=f"master@{DOMAIN}").exists():
-            self.stdout.write(self.style.WARNING("Data demo sudah ada. Pakai database baru untuk mengisi ulang."))
-            self._ringkas()
-            return
-        call_command("isi_data_contoh", paksa=True, stdout=self.stdout)
-        with transaction.atomic():
-            self._isi()
+            # Audit log tak terhapus membuat data demo tidak bisa dihapus; isi ulang butuh database baru.
+            self.stdout.write(self.style.WARNING("Data demo sudah ada; hanya dokumen yang belum Siap yang dibuat ulang."))
+        else:
+            call_command("isi_data_contoh", paksa=True, stdout=self.stdout)
+            with transaction.atomic():
+                self._isi()
+        if not options["tanpa_dokumen"]:
+            self._buat_dokumen()
         self._ringkas()
+
+    def _buat_dokumen(self):
+        """Buat dokumen demo langsung (perintah ini bukan request web), agar tidak bergantung pada qcluster."""
+        from documents.models import Dokumen
+        from documents.tugas import buat_dokumen
+
+        siap, gagal = 0, []
+        for d in Dokumen.objects.filter(audit__unit__kode__startswith="DEMO-").exclude(status=Dokumen.Status.SIAP):
+            try:
+                buat_dokumen(d.pk)
+                siap += 1
+            except Exception as e:  # dicatat di Dokumen.galat oleh buat_dokumen
+                gagal.append(str(e))
+        self.stdout.write(self.style.SUCCESS(f"Dokumen demo dibuat: {siap}."))
+        if gagal:
+            self.stdout.write(self.style.ERROR(f"{len(gagal)} dokumen gagal: {gagal[0]}"))
 
     # --- bantuan -----------------------------------------------------------------------
 
@@ -104,7 +129,7 @@ class Command(BaseCommand):
             if jumlah is not None and i >= jumlah:
                 break
             j = audit.jawaban_ser.get(pernyataan=b)
-            ser.simpan_penjelasan(audit, b.pk, f"Unit telah melaksanakan {b.pernyataan.lower()} Dokumen terlampir.", j.versi, auditee)
+            ser.simpan_penjelasan(audit, b.pk, f"Pelaksanaan butir {b.kode} dijelaskan pada dokumen bukti terlampir beserta notulen rapat unit.", j.versi, auditee)
             ser.tambah_tautan(audit, b.pk, TAUTAN, auditee, nama=f"Bukti butir {b.kode}")
         if kirim:
             ser.kirim(Audit.objects.get(pk=audit.pk), auditee)
@@ -131,7 +156,7 @@ class Command(BaseCommand):
         ketua = audit.penugasan.get(ketua=True)
         temuan.sinkron_temuan(audit)
         for t in audit.temuan.select_related("pernyataan"):
-            temuan.simpan_uraian(audit, ketua, t, f"Berdasarkan bukti butir {t.pernyataan.kode}, {t.get_jenis_display().lower()} ditemukan pada pelaksanaan.")
+            temuan.simpan_uraian(audit, ketua, t, URAIAN[t.jenis].format(kode=t.pernyataan.kode))
         temuan.tambah_peluang(audit, ketua, "Digitalisasi arsip dokumen mutu agar mudah ditelusuri.")
         from masterdata.models import TujuanAudit
 
@@ -160,12 +185,17 @@ class Command(BaseCommand):
 
         lingkup = {n: LingkupBidang.objects.get_or_create(nama=n, defaults={"urutan": i})[0] for i, n in enumerate(["Pendidikan", "Tata Kelola"])}
         ft = Unit.objects.create(nama="Fakultas Teknik (Demo)", kode="DEMO-FT", tipe_id=T.FAKULTAS, nama_pimpinan="Dekan Demo")
-        fh = Unit.objects.create(nama="Fakultas Hukum (Demo)", kode="DEMO-FH", tipe_id=T.FAKULTAS)
+        fh = Unit.objects.create(nama="Fakultas Hukum (Demo)", kode="DEMO-FH", tipe_id=T.FAKULTAS, nama_pimpinan="Dekan FH Demo")
         te = Unit.objects.create(nama="Teknik Elektro (Demo)", kode="DEMO-TE", tipe_id=T.PRODI_S1, induk=ft, nama_pimpinan="Kaprodi TE")
-        ts = Unit.objects.create(nama="Teknik Sipil (Demo)", kode="DEMO-TS", tipe_id=T.PRODI_S1, induk=ft)
-        mt = Unit.objects.create(nama="Magister Teknik (Demo)", kode="DEMO-MT", tipe_id=T.PRODI_S2, induk=ft)
-        ih = Unit.objects.create(nama="Ilmu Hukum (Demo)", kode="DEMO-IH", tipe_id=T.PRODI_S1, induk=fh)
-        biro = Unit.objects.create(nama="Biro Akademik (Demo)", kode="DEMO-BAK", tipe_id=T.BIRO)
+        ts = Unit.objects.create(nama="Teknik Sipil (Demo)", kode="DEMO-TS", tipe_id=T.PRODI_S1, induk=ft, nama_pimpinan="Kaprodi TS")
+        mt = Unit.objects.create(nama="Magister Teknik (Demo)", kode="DEMO-MT", tipe_id=T.PRODI_S2, induk=ft, nama_pimpinan="Kaprodi MT")
+        ih = Unit.objects.create(nama="Ilmu Hukum (Demo)", kode="DEMO-IH", tipe_id=T.PRODI_S1, induk=fh, nama_pimpinan="Kaprodi IH")
+        biro = Unit.objects.create(nama="Biro Akademik (Demo)", kode="DEMO-BAK", tipe_id=T.BIRO, nama_pimpinan="Kepala Biro Akademik")
+        # Kategori surat agar nomor surat demo lengkap, mis. 001/PTK/LPM/PA/X/2026 (FR-39).
+        kategori = {k.kode: k for k in KategoriSurat.objects.all()}
+        for unit, kode in ((te, "PA"), (ts, "PB"), (mt, "PA"), (ih, "PA"), (ft, "UNIV"), (fh, "UNIV"), (biro, "UNIV")):
+            unit.kategori_surat = kategori.get(kode)
+            unit.save(update_fields=["kategori_surat"])
 
         master = self._pengguna("master", "Kepala LPM (Demo)", Peran.MASTER_ADMIN)
         admin = self._pengguna("admin", "Staf LPM (Demo)", Peran.ADMIN)
@@ -179,7 +209,7 @@ class Command(BaseCommand):
         # Homebase di luar unit yang mereka audit (FR-14); Dosen 4 ber-homebase Biro dan tidak mengaudit Biro.
         dosen = [self._pengguna(f"dosen{i}", f"Dosen Auditor {i}", homebase=biro if i == 4 else fh) for i in range(1, 8)]
 
-        lalu = Periode.objects.create(nama="AMI 2024/2025 (Demo)", tahun_akademik="2024/2025", cp_lpm=admin)
+        lalu = Periode.objects.create(nama="AMI Demo", tahun_akademik="2024/2025", cp_lpm=admin)
         PengaturanPeriode.pastikan_ada(lalu)
         for kode, nama, ling, butir in STANDAR:
             s = Standar.objects.create(periode=lalu, kode=kode, nama=nama, lingkup=lingkup[ling], urutan=int(kode))
@@ -187,7 +217,7 @@ class Command(BaseCommand):
                 p = PernyataanStandar.objects.create(standar=s, kode=kp, pernyataan=teks, urutan=i,
                                                      pertanyaan_panduan="Tunjukkan dokumen dan bukti pelaksanaannya.")
                 p.tipe_unit.set(tipe)
-        sekarang = Periode.objects.create(nama="AMI 2025/2026 (Demo)", tahun_akademik="2025/2026", cp_lpm=admin)
+        sekarang = Periode.objects.create(nama="AMI Demo", tahun_akademik="2025/2026", cp_lpm=admin)
         PengaturanPeriode.pastikan_ada(sekarang)
         salin_standar(lalu, sekarang)
         sekarang.aktifkan()

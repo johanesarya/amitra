@@ -274,6 +274,23 @@ def test_halaman_dokumen_dan_polling(client, audit_dinilai, admin_lpm):
     assert "<html" not in r.content.decode()  # partial untuk HTMX
 
 
+def test_dokumen_tertahan_memberi_petunjuk_worker(client, audit_dinilai, admin_lpm, auditee):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    Dokumen.objects.filter(audit=audit_dinilai).update(diminta_pada=timezone.now() - timedelta(minutes=5))
+    client.force_login(admin_lpm)
+    isi = client.get(reverse("documents:daftar", args=[audit_dinilai.pk])).content.decode()
+    assert "python manage.py qcluster" in isi
+    client.force_login(auditee)
+    isi = client.get(reverse("documents:daftar", args=[audit_dinilai.pk])).content.decode()
+    assert "sedang disiapkan" in isi and "qcluster" not in isi
+    Dokumen.objects.filter(audit=audit_dinilai).update(diminta_pada=timezone.now())
+    client.force_login(admin_lpm)
+    assert "qcluster" not in client.get(reverse("documents:daftar", args=[audit_dinilai.pk])).content.decode()
+
+
 def test_buat_ulang_hanya_admin(client, audit_final, anggota, admin_lpm, pdf_palsu, django_capture_on_commit_callbacks):
     d = Dokumen.objects.get(audit=audit_final, jenis=JenisDokumen.TEMUAN)
     url = reverse("documents:buat_ulang", args=[audit_final.pk, d.pk])

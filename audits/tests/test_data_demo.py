@@ -18,7 +18,31 @@ S = Audit.Status
 def demo(settings, tmp_path):
     settings.DEBUG = True
     settings.MEDIA_ROOT = tmp_path
-    call_command("isi_data_demo")
+    call_command("isi_data_demo", tanpa_dokumen=True)
+
+
+def test_dokumen_demo_dibuat_langsung_tanpa_worker(demo):
+    from unittest import mock
+
+    from documents.models import Dokumen
+
+    with mock.patch("documents.tugas.render_pdf", return_value=b"%PDF-1.4 demo"):
+        call_command("isi_data_demo")  # data sudah ada → hanya dokumen yang belum Siap
+    demo_dok = Dokumen.objects.filter(audit__unit__kode__startswith="DEMO-")
+    assert demo_dok.exists() and set(demo_dok.values_list("status", flat=True)) == {"SIAP"}
+    assert demo_dok.get(jenis="DAFTAR_TILIK", audit__unit__kode="DEMO-FT").berkas_excel
+
+
+def test_dokumen_demo_gagal_dicatat_bila_pango_tidak_ada(demo):
+    from unittest import mock
+
+    from documents.models import Dokumen
+    from documents.pdf import PDFTidakTersedia
+
+    with mock.patch("documents.tugas.render_pdf", side_effect=PDFTidakTersedia("Pango tidak ditemukan")):
+        call_command("isi_data_demo")
+    d = Dokumen.objects.filter(audit__unit__kode__startswith="DEMO-").first()
+    assert d.status == "GAGAL" and "Pango" in d.galat
 
 
 def status(kode, tahun="2025/2026"):
@@ -40,7 +64,7 @@ def test_status_audit_demo(demo):
 
 def test_dijalankan_ulang_tidak_dobel(demo):
     jumlah = Audit.objects.count()
-    call_command("isi_data_demo")
+    call_command("isi_data_demo", tanpa_dokumen=True)
     assert Audit.objects.count() == jumlah
 
 
