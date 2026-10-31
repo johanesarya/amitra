@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block head_title %}Notifikasi{% endblock head_title %}
+
+{% block content %}
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <h1 class="text-2xl font-bold text-slate-900">Notifikasi</h1>
+    {% if jumlah_belum_dibaca %}
+      <form method="post" action="{% url 'notifications:tandai_semua' %}">{% csrf_token %}<button type="submit" class="tombol-kedua">Tandai semua dibaca</button></form>
+    {% endif %}
+  </div>
+  <ul class="kartu mt-6 divide-y divide-slate-100 p-0">
+    {% for n in halaman %}
+      <li>
+        <a href="{% url 'notifications:buka' n.pk %}" class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 {% if not n.dibaca_pada %}bg-blue-50{% endif %}">
+          <span class="mt-1.5 inline-block size-2 shrink-0 rounded-full {% if n.dibaca_pada %}bg-transparent{% else %}bg-blue-700{% endif %}" aria-hidden="true"></span>
+          <span class="min-w-0">
+            <span class="block text-sm {% if not n.dibaca_pada %}font-semibold{% endif %} text-slate-900">{{ n.judul }}{% if not n.dibaca_pada %}<span class="sr-only"> (belum dibaca)</span>{% endif %}</span>
+            {% if n.pesan %}<span class="block text-sm text-slate-600">{{ n.pesan|truncatechars:160 }}</span>{% endif %}
+            <span class="block text-xs text-slate-500">{{ n.dibuat_pada|date:"j M Y H.i" }}</span>
+          </span>
+        </a>
+      </li>
+    {% empty %}
+      <li class="px-4 py-6 text-center text-sm text-slate-600">Belum ada notifikasi.</li>
+    {% endfor %}
+  </ul>
+  {% if halaman.has_other_pages %}
+    <nav class="mt-4 flex justify-between text-sm" aria-label="Halaman notifikasi">
+      {% if halaman.has_previous %}<a href="?halaman={{ halaman.previous_page_number }}" class="text-blue-800 underline">← Lebih baru</a>{% else %}<span></span>{% endif %}
+      {% if halaman.has_next %}<a href="?halaman={{ halaman.next_page_number }}" class="text-blue-800 underline">Lebih lama →</a>{% endif %}
+    </nav>
+  {% endif %}
+{% endblock content %}

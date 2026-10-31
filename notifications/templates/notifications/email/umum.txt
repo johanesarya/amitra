@@ -1,0 +1,11 @@
+Yth. {{ pengguna.get_full_name }},
+
+{{ judul }}
+{% if pesan %}
+{{ pesan }}
+{% endif %}{% if tautan %}
+Buka: {{ tautan }}
+{% endif %}
+--
+SI-AMI · Lembaga Penjaminan Mutu
+Email ini dikirim otomatis; mohon tidak membalas.

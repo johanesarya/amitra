@@ -1,0 +1,14 @@
+Yth. {{ pengguna.get_full_name }},
+
+Hasil Audit Mutu Internal {{ audit.unit }} ({{ audit.periode }}) telah Final.
+{% if dilampirkan %}
+Dokumen terlampir:
+{% for d in dokumen %}- {{ d.judul }}{% if d.nomor_aktif %} (Nomor {{ d.nomor_aktif.teks }}){% endif %}
+{% endfor %}{% else %}
+Ukuran dokumen terlalu besar untuk dilampirkan. Unduh setelah masuk ke SI-AMI:
+{% endif %}
+Semua dokumen: {{ tautan }}
+
+--
+SI-AMI · Lembaga Penjaminan Mutu
+Email ini dikirim otomatis; mohon tidak membalas.
