@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block head_title %}{% if audit %}Ubah tim audit{% else %}Plot audit baru{% endif %}{% endblock head_title %}
+
+{% block content %}
+  <p class="text-sm"><a href="{% url 'audits:daftar' %}?periode={{ periode.pk }}" class="text-blue-800 underline-offset-4 hover:underline">← Kembali ke Plot Audit</a></p>
+  <h1 class="mt-2 text-2xl font-bold text-slate-900">{% if audit %}Ubah tim audit {{ audit.unit }}{% else %}Plot audit baru{% endif %}</h1>
+  <p class="mt-1 text-sm text-slate-600">{{ periode }}</p>
+
+  {{ form.id_auditor_terpilih|json_script:"data-terpilih" }}
+  {{ form.id_ketua_terpilih|json_script:"data-ketua" }}
+
+  <form method="post" class="mt-6 grid gap-6 lg:grid-cols-3" x-data="plotAudit()"
+        hx-post="{% url 'audits:periksa_tim' %}" hx-trigger="change delay:300ms" hx-target="#hasil-periksa" hx-sync="this:replace">
+    {% csrf_token %}
+    <input type="hidden" name="periode" value="{{ periode.pk }}">
+    {% if audit %}<input type="hidden" name="audit" value="{{ audit.pk }}">{% endif %}
+
+    <div class="space-y-6 lg:col-span-2">
+      <fieldset class="kartu space-y-4">
+        <legend class="text-lg font-semibold text-slate-900">Unit dan lingkup</legend>
+        <div>
+          <label for="{{ form.unit.id_for_label }}" class="label">{{ form.unit.label }}</label>
+          {{ form.unit }}
+        </div>
+        <div>
+          <span class="label">{{ form.lingkup.label }}</span>
+          <div class="flex flex-wrap gap-x-6 gap-y-2">
+            {% for cb in form.lingkup %}
+              <label class="inline-flex items-center gap-2 text-sm">{{ cb.tag }} {{ cb.choice_label }}</label>
+            {% empty %}
+              <p class="text-sm text-slate-600">Belum ada lingkup bidang. Tambahkan di menu Administrasi.</p>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="{{ form.auditee.id_for_label }}" class="label">{{ form.auditee.label }}</label>
+            {{ form.auditee }}
+          </div>
+          <div>
+            <label for="{{ form.jadwal_audit_lapangan.id_for_label }}" class="label">{{ form.jadwal_audit_lapangan.label }}</label>
+            {{ form.jadwal_audit_lapangan }}
+            <p class="mt-1 text-xs text-slate-500">{{ form.jadwal_audit_lapangan.help_text }}</p>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="kartu space-y-4">
+        <legend class="text-lg font-semibold text-slate-900">Tim auditor</legend>
+        <p class="text-sm text-slate-600">
+          Pilih auditor berjumlah ganjil (minimal {{ periode.pengaturan.minimal_auditor }}), lalu tandai satu ketua.
+          Beban menunjukkan jumlah audit lain di periode ini.
+        </p>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <label class="w-full sm:w-80">
+            <span class="sr-only">Cari auditor</span>
+            <input type="search" x-model="cari" placeholder="Cari nama, email, atau homebase" class="isian">
+          </label>
+          <p class="text-sm" aria-live="polite">
+            Dipilih: <strong x-text="terpilih.length"></strong> auditor
+            <span x-show="terpilih.length && !ganjil" class="font-medium text-red-700">(harus ganjil)</span>
+          </p>
+        </div>
+        <div class="max-h-[28rem] overflow-y-auto rounded-md border border-slate-200">
+          <table class="w-full text-left text-sm">
+            <thead class="sticky top-0 bg-slate-50 text-slate-700">
+              <tr>
+                <th scope="col" class="w-12 px-3 py-2"><span class="sr-only">Pilih</span></th>
+                <th scope="col" class="px-3 py-2 font-semibold">Nama</th>
+                <th scope="col" class="px-3 py-2 font-semibold">Homebase</th>
+                <th scope="col" class="px-3 py-2 font-semibold">Beban</th>
+                <th scope="col" class="px-3 py-2 font-semibold">Ketua</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {% for c in calon_auditor %}
+                <tr x-show="cocok($el)" data-cari="{{ c.user.nama|lower }} {{ c.user.email|lower }} {{ c.user.homebase.nama|default:''|lower }}"
+                    x-data="{ unitKonflik: {{ c.unit_konflik }} }" :class="konflik(unitKonflik) && 'bg-red-50'">
+                  <td class="px-3 py-2">
+                    <input type="checkbox" name="auditor" value="{{ c.user.pk }}" id="auditor-{{ c.user.pk }}" x-model="terpilih" class="size-4">
+                  </td>
+                  <td class="px-3 py-2">
+                    <label for="auditor-{{ c.user.pk }}" class="font-medium text-slate-900">{{ c.user.nama|default:c.user.email }}</label>
+                    <div class="text-xs text-slate-500">{{ c.user.email }}</div>
+                    <div x-show="konflik(unitKonflik)" class="text-xs font-medium text-red-700">Konflik: homebase atau jabatan di unit ini</div>
+                  </td>
+                  <td class="px-3 py-2 text-slate-700">{{ c.user.homebase|default:"—" }}</td>
+                  <td class="px-3 py-2 text-slate-700">{{ c.beban }}</td>
+                  <td class="px-3 py-2">
+                    <input type="radio" name="ketua" value="{{ c.user.pk }}" x-model="ketua"
+                           :disabled="!terpilih.includes('{{ c.user.pk }}')" class="size-4"
+                           aria-label="Jadikan {{ c.user.nama|default:c.user.email }} ketua auditor">
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="px-3 py-4 text-center text-slate-600">Belum ada pengguna yang dapat diplot.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+    </div>
+
+    <aside class="space-y-4 lg:sticky lg:top-4 lg:self-start">
+      <div class="kartu space-y-4">
+        <h2 class="text-lg font-semibold text-slate-900">Pemeriksaan tim</h2>
+        <div id="hasil-periksa">{% include "audits/_periksa_tim.html" %}</div>
+        <button type="submit" class="tombol-utama w-full">{% if audit %}Simpan perubahan{% else %}Simpan audit{% endif %}</button>
+      </div>
+    </aside>
+  </form>
+{% endblock content %}
+
+{% block extra_body %}
+  <script>
+    function plotAudit() {
+      return {
+        unit: document.getElementById("id_unit").value,
+        cari: "",
+        terpilih: JSON.parse(document.getElementById("data-terpilih").textContent),
+        ketua: JSON.parse(document.getElementById("data-ketua").textContent),
+        get ganjil() { return this.terpilih.length % 2 === 1; },
+        cocok(el) { return !this.cari || el.dataset.cari.includes(this.cari.toLowerCase()); },
+        konflik(ids) { return !!this.unit && ids.map(String).includes(String(this.unit)); },
+      };
+    }
+  </script>
+{% endblock extra_body %}

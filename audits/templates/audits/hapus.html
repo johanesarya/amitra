@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block head_title %}Hapus audit{% endblock head_title %}
+
+{% block content %}
+  <div class="kartu mx-auto max-w-lg space-y-4">
+    <h1 class="text-xl font-bold text-slate-900">Hapus audit {{ audit.unit }}?</h1>
+    <p class="text-sm text-slate-700">
+      Audit {{ audit.unit }} pada {{ audit.periode }} beserta seluruh penugasan timnya akan dihapus.
+      Tindakan ini tidak dapat dibatalkan.
+    </p>
+    <form method="post" class="flex flex-wrap gap-2">
+      {% csrf_token %}
+      <button type="submit" class="tombol bg-red-700 text-white hover:bg-red-800 focus-visible:outline-red-700">Ya, hapus audit</button>
+      <a href="{% url 'audits:daftar' %}?periode={{ audit.periode_id }}" class="tombol-kedua">Batal</a>
+    </form>
+  </div>
+{% endblock content %}

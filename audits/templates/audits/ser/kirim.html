@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block head_title %}Kirim SER{% endblock head_title %}
+
+{% block content %}
+  <p class="text-sm"><a href="{% url 'audits:ser' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← Kembali ke SER</a></p>
+  <div class="kartu mx-auto mt-4 max-w-2xl space-y-5">
+    <h1 class="text-xl font-bold text-slate-900">Tinjau dan kirim SER</h1>
+    <p class="text-sm text-slate-700">{{ audit.unit }} · {{ audit.periode }}</p>
+
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div class="rounded-md bg-slate-50 p-3"><dt class="text-slate-600">Butir lengkap</dt><dd class="text-2xl font-bold text-slate-900">{{ ringkasan.lengkap }}</dd></div>
+      <div class="rounded-md bg-slate-50 p-3"><dt class="text-slate-600">Total butir</dt><dd class="text-2xl font-bold text-slate-900">{{ ringkasan.total }}</dd></div>
+    </dl>
+
+    {% if ringkasan.belum_lengkap %}
+      <div class="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status">
+        <p class="font-semibold">{{ ringkasan.belum_lengkap|length }} butir belum lengkap:</p>
+        <ul class="mt-2 space-y-1">
+          {% for p, kurang in ringkasan.belum_lengkap %}
+            <li>
+              <a href="{% url 'audits:ser' audit.pk %}?butir={{ p.pk }}" class="font-medium underline">{{ p.kode }}</a>
+              — belum ada {{ kurang|join:" dan " }}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <p class="text-sm text-slate-700">
+      Setelah dikirim, SER <strong>terkunci</strong> dan tidak dapat diubah lagi. Auditor akan mulai menilai.
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="tombol-utama" {% if not ringkasan.siap_dikirim or not bisa_ubah %}disabled{% endif %}>
+        Kirim SER sekarang
+      </button>
+    </form>
+  </div>
+{% endblock content %}

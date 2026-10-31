@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block head_title %}SER {{ audit.unit }}{% endblock head_title %}
+
+{% block content %}
+  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
+  <div class="mt-2 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Self Evaluation Report (SER)</h1>
+      <p class="mt-1 text-sm text-slate-600">
+        {{ audit.unit }} · {{ audit.periode }} · {{ audit.get_status_display }}
+        {% if audit.batas_ser %} · Batas pengisian: <strong>{{ audit.batas_ser|date:"l, j F Y" }}</strong>{% endif %}
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <p class="text-sm text-slate-700"><strong>{{ jumlah_lengkap }}</strong> dari {{ butir|length }} butir lengkap</p>
+      {% if bisa_ubah %}
+        <a href="{% url 'audits:ser_kirim' audit.pk %}" class="tombol-utama">Tinjau dan kirim SER</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if adalah_auditee and not bisa_ubah %}
+    <p class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+      {% if audit.ser_dikirim_pada and audit.status != "PENGISIAN_SER" %}
+        SER sudah dikirim pada {{ audit.ser_dikirim_pada|date:"j F Y H.i" }} dan terkunci.
+      {% else %}
+        Batas pengisian SER sudah lewat. Hubungi Master Admin LPM bila perlu perpanjangan.
+      {% endif %}
+    </p>
+  {% endif %}
+  {% if bisa_ubah %}
+    <p class="mt-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+      <strong>Himbauan:</strong> simpan dokumen bukti di Google Drive unit Anda, atur aksesnya agar dapat dibuka auditor,
+      lalu tempel tautannya di sini. Unggah berkas hanya bila tidak memungkinkan. Isian tersimpan otomatis.
+    </p>
+  {% endif %}
+
+  <div class="mt-6 grid gap-6 lg:grid-cols-[18rem_1fr]" x-data="SIAMI.autosave('konfig-ser', ['penjelasan'])">
+    <nav aria-label="Daftar butir" class="kartu max-h-[70vh] overflow-y-auto p-0 lg:sticky lg:top-4 lg:self-start">
+      {% regroup butir by 0.standar as per_standar %}
+      {% for kelompok in per_standar %}
+        <p class="sticky top-0 bg-slate-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600">{{ kelompok.grouper.kode }} {{ kelompok.grouper.nama }}</p>
+        <ul>
+          {% for p, j in kelompok.list %}
+            <li>
+              <a href="?butir={{ p.pk }}" @click.prevent="pindah($el.href)"
+                 class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-slate-50 {% if p.pk == aktif.pk %}bg-blue-50 font-semibold text-blue-900{% else %}text-slate-700{% endif %}"
+                 {% if p.pk == aktif.pk %}aria-current="page"{% endif %}>
+                <span class="mt-1.5">{% include "audits/ser/_tanda.html" with pk=p.pk lengkap=j.lengkap %}</span>
+                <span><span class="font-medium">{{ p.kode }}</span> {{ p.pernyataan|truncatechars:60 }}</span>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endfor %}
+    </nav>
+
+    <section class="kartu space-y-5" aria-labelledby="judul-butir">
+      <p class="text-sm text-slate-600">Butir {{ nomor }} dari {{ butir|length }} · {{ aktif.standar.kode }} {{ aktif.standar.nama }}</p>
+      <div>
+        <h2 id="judul-butir" class="text-lg font-semibold text-slate-900">{{ aktif.kode }}</h2>
+        <p class="mt-1 text-slate-800">{{ aktif.pernyataan }}</p>
+        {% if aktif.pertanyaan_panduan %}
+          <p class="mt-2 text-sm text-slate-600"><span class="font-medium">Pertanyaan panduan:</span> {{ aktif.pertanyaan_panduan }}</p>
+        {% endif %}
+      </div>
+
+      <div>
+        <label for="penjelasan" class="label">Hasil/penjelasan</label>
+        {% if bisa_ubah %}
+          <textarea id="penjelasan" rows="8" class="isian" x-model="penjelasan" @input="tandaiKotor()" @blur="simpan()"
+                    placeholder="Jelaskan kondisi unit terkait pernyataan ini."></textarea>
+          <p class="mt-1 text-xs" aria-live="polite">
+            <span x-show="status === 'tersimpan' && waktu" class="text-green-700">Tersimpan pukul <span x-text="waktu"></span></span>
+            <span x-show="status === 'belum'" class="text-slate-500">Ada perubahan yang belum tersimpan</span>
+            <span x-show="status === 'menyimpan'" class="text-slate-500">Menyimpan…</span>
+            <span x-show="status === 'gagal'" class="text-red-700" x-text="pesan"></span>
+          </p>
+          <div x-show="status === 'konflik'" x-cloak class="mt-2 space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alert">
+            <p>
+              Butir ini sudah diubah di tab atau perangkat lain<span x-show="konflik.oleh"> oleh <span x-text="konflik.oleh"></span></span>
+              pukul <span x-text="konflik.waktu"></span>. Isian Anda belum disimpan.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="tombol-kedua" @click="pakaiVersiServer()">Muat isian terbaru</button>
+              <button type="button" class="tombol-kedua" @click="timpa()">Simpan isian saya</button>
+            </div>
+          </div>
+        {% else %}
+          <div class="whitespace-pre-line rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800">{{ jawaban.penjelasan|default:"Belum diisi." }}</div>
+        {% endif %}
+      </div>
+
+      {% include "findings/_ptk_lalu.html" %}
+      {% include "audits/ser/_bukti.html" with aktif_pk=aktif.pk %}
+
+      <div class="flex flex-wrap justify-between gap-2 border-t border-slate-100 pt-4">
+        {% if sebelumnya %}
+          <a href="?butir={{ sebelumnya.pk }}" @click.prevent="pindah($el.href)" class="tombol-kedua">← Butir sebelumnya</a>
+        {% else %}<span></span>{% endif %}
+        {% if berikutnya %}
+          <a href="?butir={{ berikutnya.pk }}" @click.prevent="pindah($el.href)" class="tombol-utama">Butir berikutnya →</a>
+        {% elif bisa_ubah %}
+          <a href="{% url 'audits:ser_kirim' audit.pk %}" @click.prevent="pindah($el.href)" class="tombol-utama">Tinjau dan kirim SER</a>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+{% endblock content %}
+
+{% block extra_body %}
+  {{ konfig|json_script:"konfig-ser" }}
+{% endblock extra_body %}

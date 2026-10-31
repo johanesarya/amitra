@@ -1,0 +1,17 @@
+{% if form.is_bound %}
+  {% if siap %}
+    <div class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
+      Tim memenuhi semua aturan dan siap disimpan.
+    </div>
+  {% else %}
+    <div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <p class="font-semibold">Belum dapat disimpan:</p>
+      <ul class="mt-1 list-disc space-y-1 pl-5">
+        {% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}
+        {% for field in form %}{% for e in field.errors %}<li>{{ field.label }}: {{ e }}</li>{% endfor %}{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% else %}
+  <p class="text-sm text-slate-600">Aturan tim diperiksa otomatis saat Anda mengisi formulir.</p>
+{% endif %}

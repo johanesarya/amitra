@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block head_title %}Dashboard{% endblock head_title %}
+
+{% block content %}
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Dashboard monitoring</h1>
+      <p class="mt-1 text-sm text-slate-600">{{ periode }} · data langsung, termasuk audit yang masih berjalan</p>
+    </div>
+    <form method="post" action="{% url 'ekspor:minta' %}">
+      {% csrf_token %}
+      <input type="hidden" name="jenis" value="DATA_PERIODE">
+      <input type="hidden" name="periode" value="{{ periode.pk }}">
+      <button type="submit" class="tombol-kedua">Ekspor data mentah periode (Excel)</button>
+    </form>
+    {% if perms.audits.buka_kunci_audit %}
+      <a href="{% url 'audits:arsip_periode' periode.pk %}" class="tombol-kedua">Arsipkan periode</a>
+    {% endif %}
+  </div>
+
+  <dl class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div class="kartu p-4"><dt class="text-sm text-slate-600">Jumlah audit</dt><dd class="text-2xl font-bold">{{ ringkasan.total }}</dd></div>
+    <div class="kartu p-4"><dt class="text-sm text-slate-600">SER terkirim</dt><dd class="text-2xl font-bold">{{ ringkasan.persen_ser }}%</dd><dd class="text-xs text-slate-500">{{ ringkasan.ser_terkirim }} dari {{ ringkasan.total }}</dd></div>
+    <div class="kartu p-4"><dt class="text-sm text-slate-600">Perlu Audit Lapangan</dt><dd class="text-2xl font-bold {% if ringkasan.perlu_al %}text-amber-700{% endif %}">{{ ringkasan.perlu_al }}</dd></div>
+    <div class="kartu p-4"><dt class="text-sm text-slate-600">Deviasi di atas ambang</dt><dd class="text-2xl font-bold {% if ringkasan.deviasi_tinggi %}text-amber-700{% endif %}">{{ ringkasan.deviasi_tinggi }}</dd></div>
+  </dl>
+  {% if ringkasan.per_status %}
+    <ul class="mt-3 flex flex-wrap gap-2 text-xs" aria-label="Jumlah audit per status">
+      {% for kode, label, n in ringkasan.per_status %}<li class="rounded bg-slate-100 px-2 py-1 text-slate-700">{{ label }}: <strong>{{ n }}</strong></li>{% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="get" class="kartu mt-6 grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-6" aria-label="Saring audit">
+    {% for field in form %}
+      {% if field.name == "deviasi_tinggi" %}
+        <label class="flex items-end gap-2 pb-2 text-sm">{{ field }} {{ field.label }}</label>
+      {% else %}
+        <div><label for="{{ field.id_for_label }}" class="label">{{ field.label }}</label>{{ field }}</div>
+      {% endif %}
+    {% endfor %}
+    <div class="flex items-end"><button type="submit" class="tombol-kedua w-full">Terapkan</button></div>
+  </form>
+
+  <div class="kartu mt-6 overflow-x-auto p-0">
+    <table class="w-full min-w-[960px] text-left text-sm">
+      <thead class="border-b border-slate-200 bg-slate-50 text-slate-700">
+        <tr>
+          <th scope="col" class="px-3 py-2 font-semibold">Unit</th>
+          <th scope="col" class="px-3 py-2 font-semibold">Status</th>
+          <th scope="col" class="px-3 py-2 font-semibold">SER</th>
+          <th scope="col" class="px-3 py-2 font-semibold">Auditor (butir dinilai)</th>
+          <th scope="col" class="px-3 py-2 font-semibold">D</th>
+          <th scope="col" class="px-3 py-2 font-semibold">NE</th>
+          <th scope="col" class="px-3 py-2 font-semibold">Tenggat</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for b in baris %}
+          <tr class="align-top">
+            <td class="px-3 py-2">
+              <a href="{% url 'audits:detail' b.audit.pk %}" class="font-medium text-blue-800 underline-offset-4 hover:underline">{{ b.audit.unit }}</a>
+              <div class="text-xs text-slate-500">{{ b.audit.unit.tipe }}{% if b.audit.unit.induk %} · {{ b.audit.unit.induk }}{% endif %}</div>
+              <div class="text-xs text-slate-500">Auditee: {{ b.auditee|default:"—" }}</div>
+            </td>
+            <td class="px-3 py-2"><span class="rounded bg-slate-100 px-2 py-0.5 text-xs">{{ b.audit.get_status_display }}</span></td>
+            <td class="px-3 py-2 whitespace-nowrap">
+              {% if b.audit.ser_dikirim_pada %}<span class="text-green-700">Terkirim</span>{% else %}{{ b.ser_lengkap }}/{{ b.total_butir }}{% endif %}
+              {% if b.total_butir %}
+                <div class="mt-1 h-1.5 w-24 rounded bg-slate-200" aria-hidden="true">
+                  <div class="h-1.5 rounded bg-blue-700" style="width: {% widthratio b.ser_lengkap b.total_butir 100 %}%"></div>
+                </div>
+              {% endif %}
+            </td>
+            <td class="px-3 py-2">
+              <ul class="space-y-0.5 text-xs">
+                {% for x in b.auditor %}
+                  <li>
+                    {{ x.penugasan.pengguna }}{% if x.penugasan.ketua %} (ketua){% endif %}:
+                    {% if x.penugasan.dikunci_pada %}<span class="text-green-700">terkunci</span>
+                    {% elif x.dinilai %}{{ x.dinilai }}/{{ b.total_butir }}
+                    {% else %}<span class="text-slate-500">belum mulai</span>{% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            </td>
+            <td class="px-3 py-2 {% if b.hasil.deviasi_tinggi %}font-semibold text-amber-700{% endif %}">
+              {{ b.hasil.deviasi|default:"—" }}{% if b.hasil.deviasi_tinggi %}<span class="block text-xs font-normal">di atas ambang</span>{% endif %}
+            </td>
+            <td class="px-3 py-2">{{ b.hasil.ne|default:"—" }}</td>
+            <td class="px-3 py-2 whitespace-nowrap text-xs">{% if b.tenggat %}{{ b.tenggat.0 }}: {{ b.tenggat.1|date:"j M Y" }}{% else %}—{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="px-3 py-6 text-center text-slate-600">Tidak ada audit yang cocok.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock content %}

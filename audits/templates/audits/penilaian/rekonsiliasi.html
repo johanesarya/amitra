@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block head_title %}Rekonsiliasi {{ audit.unit }}{% endblock head_title %}
+
+{% block content %}
+  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
+  <h1 class="mt-2 text-2xl font-bold text-slate-900">Rekonsiliasi: butir tanpa kategori terbanyak</h1>
+  <p class="mt-1 text-sm text-slate-600">
+    Penilaian auditor pada butir berikut tidak memiliki satu kategori terbanyak (BR-13). Ketua menetapkan kategorinya
+    dengan alasan; setelah semua ditetapkan, sistem menghitung nilai efektif dan memutuskan perlu tidaknya Audit Lapangan.
+  </p>
+
+  <div class="mt-6 space-y-4">
+    {% for r in baris_seri %}
+      <section class="kartu space-y-3" aria-labelledby="seri-{{ r.butir.pk }}">
+        <h2 id="seri-{{ r.butir.pk }}" class="font-semibold text-slate-900">{{ r.butir.kode }} {{ r.butir.pernyataan }}</h2>
+        <ul class="grid gap-3 text-sm sm:grid-cols-3">
+          {% for a, p in r.penilaian %}
+            <li class="rounded-md border border-slate-200 p-3">
+              <p class="text-xs text-slate-500">{{ a.pengguna }}</p>
+              {% include "audits/penilaian/_sel_penilaian.html" %}
+            </li>
+          {% endfor %}
+        </ul>
+        {% if adalah_ketua %}
+          <form method="post" class="grid gap-3 sm:grid-cols-[14rem_1fr_auto] sm:items-end">
+            {% csrf_token %}
+            <input type="hidden" name="pernyataan" value="{{ r.butir.pk }}">
+            <label class="block">
+              <span class="label">Kategori</span>
+              <select name="kategori" required class="isian">
+                <option value="">— Pilih —</option>
+                {% for nilai, label in kategori_pilihan %}<option value="{{ nilai }}">{{ label }}</option>{% endfor %}
+              </select>
+            </label>
+            <label class="block">
+              <span class="label">Alasan penetapan</span>
+              <input type="text" name="alasan" required class="isian">
+            </label>
+            <button type="submit" class="tombol-utama">Tetapkan</button>
+          </form>
+        {% endif %}
+      </section>
+    {% empty %}
+      <p class="kartu text-sm text-slate-600">Tidak ada butir seri.</p>
+    {% endfor %}
+  </div>
+{% endblock content %}

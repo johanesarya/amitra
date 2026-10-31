@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block head_title %}Buka kunci SER{% endblock head_title %}
+
+{% block content %}
+  <div class="kartu mx-auto max-w-lg space-y-4">
+    <h1 class="text-xl font-bold text-slate-900">Buka kunci / perpanjang SER</h1>
+    <p class="text-sm text-slate-700">
+      {{ audit.unit }} · {{ audit.periode }} · status {{ audit.get_status_display }}.
+      Batas saat ini: {{ audit.batas_ser|date:"j F Y"|default:"tidak ada" }}.
+    </p>
+    <p class="text-sm text-slate-700">
+      {% if audit.status == "PENILAIAN_AUDITOR" %}
+        SER akan kembali ke status Pengisian SER agar auditee dapat memperbaikinya.
+      {% else %}
+        SER masih terbuka; Anda dapat memperpanjang batas pengisian untuk audit ini.
+      {% endif %}
+      Tindakan dan alasan Anda dicatat di riwayat audit.
+    </p>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {% for e in form.non_field_errors %}<p class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ e }}</p>{% endfor %}
+      {% for field in form %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<p class="mt-1 text-xs text-slate-500">{{ field.help_text }}</p>{% endif %}
+          {% for e in field.errors %}<p class="mt-1 text-sm text-red-700" role="alert">{{ e }}</p>{% endfor %}
+        </div>
+      {% endfor %}
+      <div class="flex flex-wrap gap-2">
+        <button type="submit" class="tombol-utama">Buka kunci</button>
+        <a href="{% url 'audits:detail' audit.pk %}" class="tombol-kedua">Batal</a>
+      </div>
+    </form>
+  </div>
+{% endblock content %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block head_title %}Tabel perbedaan {{ audit.unit }}{% endblock head_title %}
+
+{% block content %}
+  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
+  <h1 class="mt-2 text-2xl font-bold text-slate-900">Tabel perbedaan penilaian</h1>
+  <p class="mt-1 text-sm text-slate-600">
+    {{ audit.unit }} · {{ audit.periode }}. Baris berwarna kuning adalah butir penyumbang deviasi (penilaian berbeda antar-auditor).
+  </p>
+
+  <div class="kartu mt-6 overflow-x-auto p-0">
+    <table class="w-full min-w-[900px] text-left text-sm">
+      <thead class="border-b border-slate-200 bg-slate-50 text-slate-700">
+        <tr>
+          <th scope="col" class="w-64 px-3 py-2 font-semibold">Butir</th>
+          {% for a in auditor %}
+            <th scope="col" class="px-3 py-2 font-semibold">{{ a.pengguna }}{% if a.ketua %} <span class="text-xs font-normal">(ketua)</span>{% endif %}</th>
+          {% endfor %}
+          <th scope="col" class="px-3 py-2 font-semibold">Kategori final</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for r in baris %}
+          <tr class="align-top {% if r.tidak_berlaku %}bg-slate-50 text-slate-500{% elif r.berbeda %}bg-amber-50{% endif %}">
+            <th scope="row" class="px-3 py-2 font-normal">
+              <span class="font-semibold">{{ r.butir.kode }}</span> {{ r.butir.pernyataan|truncatechars:90 }}
+              {% if r.berbeda and not r.tidak_berlaku %}<span class="mt-1 block text-xs font-medium text-amber-800">Berbeda</span>{% endif %}
+            </th>
+            {% for a, p in r.penilaian %}
+              <td class="px-3 py-2">{% if r.tidak_berlaku %}—{% else %}{% include "audits/penilaian/_sel_penilaian.html" %}{% endif %}</td>
+            {% endfor %}
+            <td class="px-3 py-2">
+              {% if r.tidak_berlaku %}Tidak berlaku
+              {% elif r.final.kategori %}{{ r.final.get_kategori_display }}<span class="block text-xs text-slate-500">{{ r.final.get_cara_display }}</span>
+              {% elif r.final %}<span class="font-medium text-red-700">Seri — menunggu ketua</span>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock content %}

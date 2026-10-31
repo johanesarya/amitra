@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block head_title %}Plot massal audit{% endblock head_title %}
+
+{% block content %}
+  <p class="text-sm"><a href="{% url 'audits:daftar' %}" class="text-blue-800 underline-offset-4 hover:underline">← Kembali ke Plot Audit</a></p>
+  <h1 class="mt-2 text-2xl font-bold text-slate-900">Plot massal audit dari Excel</h1>
+
+  {% if not hasil %}
+    <div class="kartu mt-6 max-w-2xl space-y-4">
+      <p class="text-sm text-slate-700">
+        Unduh <a href="{{ template_url }}" class="font-medium text-blue-800 underline">template plot audit</a>, isi satu baris per audit,
+        lalu unggah. Data diperiksa dengan aturan yang sama seperti formulir plot dan baru disimpan setelah Anda
+        mengonfirmasi pratinjau.
+      </p>
+      <form method="post" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+          <div>
+            <label for="{{ field.id_for_label }}" class="label">{{ field.label }}</label>
+            {% if field.name == "periode" %}
+              <select name="periode" id="{{ field.id_for_label }}" class="isian">
+                {% for value, label in field.field.choices %}
+                  <option value="{{ value }}" {% if value|stringformat:"s" == field.value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            {% else %}
+              <input type="file" name="berkas" id="{{ field.id_for_label }}" accept=".xlsx" required class="block text-sm">
+            {% endif %}
+            {% if field.help_text %}<p class="mt-1 text-xs text-slate-500">{{ field.help_text }}</p>{% endif %}
+            {% for e in field.errors %}<p class="mt-1 text-sm text-red-700" role="alert">{{ e }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+        <button type="submit" name="aksi" value="pratinjau" class="tombol-utama">Periksa dan tampilkan pratinjau</button>
+      </form>
+    </div>
+  {% else %}
+    <h2 class="mt-6 text-lg font-semibold text-slate-900">Pratinjau plot ke {{ periode }}</h2>
+    <p class="mt-1 text-sm" role="status">
+      {{ hasil.baris|length }} baris dibaca.
+      {% if hasil.ada_galat %}
+        <strong class="text-red-700">{{ hasil.jumlah_galat }} baris bermasalah.</strong>
+        Perbaiki berkas lalu unggah ulang; tidak ada data yang disimpan.
+      {% else %}
+        Semua baris valid.
+      {% endif %}
+    </p>
+    <div class="kartu mt-4 overflow-x-auto p-0">
+      <table class="w-full min-w-[800px] text-left text-sm">
+        <thead class="border-b border-slate-200 bg-slate-50 text-slate-700">
+          <tr>
+            <th class="px-3 py-2">Baris</th><th class="px-3 py-2">Unit</th><th class="px-3 py-2">Auditee</th>
+            <th class="px-3 py-2">Auditor</th><th class="px-3 py-2">Ketua</th><th class="px-3 py-2">Galat</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for b in hasil.baris %}
+            <tr class="{% if b.galat %}bg-red-50{% endif %} align-top">
+              <td class="px-3 py-2">{{ b.nomor }}</td>
+              <td class="px-3 py-2">{{ b.data.kode_unit }}</td>
+              <td class="px-3 py-2">{{ b.data.auditee }}</td>
+              <td class="px-3 py-2">{{ b.data.auditor }}</td>
+              <td class="px-3 py-2">{{ b.data.ketua }}</td>
+              <td class="px-3 py-2 text-red-700">{% for g in b.galat %}{{ g }}<br>{% endfor %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-4 flex flex-wrap gap-2">
+      {% if not hasil.ada_galat %}
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" name="aksi" value="simpan" class="tombol-utama">Simpan {{ hasil.baris|length }} audit</button>
+        </form>
+      {% endif %}
+      <a href="{% url 'audits:impor' %}" class="tombol-kedua">Unggah berkas lain</a>
+    </div>
+  {% endif %}
+{% endblock content %}

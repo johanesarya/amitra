@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block head_title %}Tugas Saya{% endblock head_title %}
+
+{% block content %}
+  <h1 class="text-2xl font-bold text-slate-900">Tugas Saya</h1>
+  <p class="mt-1 text-sm text-slate-600">Selamat datang, {{ user.get_short_name }}.</p>
+
+  {% if punya_hasil_final %}
+    <p class="mt-4 flex flex-wrap gap-4 text-sm">
+      <a href="{% url 'audits:riwayat' %}" class="text-blue-800 underline">Riwayat AMI unit</a>
+      <a href="{% url 'analitik:beranda' %}" class="text-blue-800 underline">Rapor dan tren unit Anda</a>
+    </p>
+  {% endif %}
+  <section class="mt-6 space-y-3" aria-labelledby="judul-tugas">
+    <h2 id="judul-tugas" class="text-lg font-semibold text-slate-900">Audit yang ditugaskan</h2>
+    {% for p in daftar_penugasan %}
+      <article class="kartu flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p class="font-semibold text-slate-900">{{ p.audit.unit }}</p>
+          <p class="text-sm text-slate-600">
+            {{ p.audit.periode }} ·
+            <span class="font-medium">{% if p.ketua %}Ketua auditor{% else %}{{ p.get_peran_display }}{% endif %}</span> ·
+            {{ p.audit.get_status_display }}
+          </p>
+          {% if p.tenggat %}
+            <p class="mt-1 text-sm {% if p.tenggat.sisa < 0 %}font-medium text-red-700{% elif p.tenggat.sisa <= 3 %}font-medium text-amber-700{% else %}text-slate-600{% endif %}">
+              Tenggat {{ p.tenggat.label|lower }}: {{ p.tenggat.batas|date:"j F Y" }}
+              ({% if p.tenggat.sisa < 0 %}lewat {{ p.tenggat.sisa|stringformat:"d"|slice:"1:" }} hari{% else %}{{ p.tenggat.keterangan_sisa }}{% endif %})
+            </p>
+          {% endif %}
+        </div>
+        {% if p.peran == "AUDITEE" and p.audit.ser_bisa_diisi %}
+          <a href="{% url 'audits:ser' p.audit.pk %}" class="tombol-utama">Isi SER</a>
+        {% elif p.peran == "AUDITOR" and p.audit.status == "PENILAIAN_AUDITOR" and not p.dikunci_pada %}
+          <a href="{% url 'audits:penilaian' p.audit.pk %}" class="tombol-utama">Nilai SER</a>
+        {% elif p.ketua and p.audit.status == "REKONSILIASI" %}
+          <a href="{% url 'audits:rekonsiliasi' p.audit.pk %}" class="tombol-utama">Rekonsiliasi</a>
+        {% elif p.ketua and p.audit.status == "PERLU_AUDIT_LAPANGAN" %}
+          <a href="{% url 'audits:audit_lapangan' p.audit.pk %}" class="tombol-utama">Audit Lapangan</a>
+        {% elif p.peran == "AUDITOR" and p.audit.revisi_al_dibuka and not p.dikunci_pada %}
+          <a href="{% url 'audits:penilaian' p.audit.pk %}" class="tombol-utama">Revisi penilaian</a>
+        {% elif p.ketua and p.audit.status == "PERUMUSAN_TEMUAN" %}
+          <a href="{% url 'findings:perumusan' p.audit.pk %}" class="tombol-utama">Rumuskan temuan</a>
+        {% elif p.peran == "AUDITEE" and p.audit.status == "MENUNGGU_PERSETUJUAN" %}
+          <a href="{% url 'findings:persetujuan' p.audit.pk %}" class="tombol-utama">Tinjau dan setujui hasil</a>
+        {% elif p.peran == "AUDITEE" and p.audit.status == "FINAL" %}
+          <a href="{% url 'findings:ptk' p.audit.pk %}" class="tombol-utama">Isi rencana PTK</a>
+        {% else %}
+          <a href="{% url 'audits:detail' p.audit.pk %}" class="tombol-utama">Lihat audit</a>
+        {% endif %}
+      </article>
+    {% empty %}
+      <p class="kartu text-sm text-slate-600">Belum ada audit yang ditugaskan kepada Anda.</p>
+    {% endfor %}
+  </section>
+{% endblock content %}

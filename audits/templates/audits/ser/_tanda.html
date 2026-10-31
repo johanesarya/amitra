@@ -1,0 +1,4 @@
+<span id="tanda-{{ pk }}"{% if oob %} hx-swap-oob="true"{% endif %}
+      class="inline-block size-2.5 shrink-0 rounded-full {% if lengkap %}bg-green-600{% else %}bg-slate-300{% endif %}"
+      role="img" aria-label="{% if lengkap %}Lengkap{% else %}Belum lengkap{% endif %}"
+      title="{% if lengkap %}Lengkap{% else %}Belum lengkap{% endif %}"></span>

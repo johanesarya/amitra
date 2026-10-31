@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block head_title %}Audit Lapangan {{ audit.unit }}{% endblock head_title %}
+
+{% block content %}
+  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
+  <h1 class="mt-2 text-2xl font-bold text-slate-900">Audit Lapangan</h1>
+  <p class="mt-1 text-sm text-slate-600">{{ audit.unit }} · {{ audit.periode }} · {{ audit.get_status_display }}</p>
+
+  <div class="mt-6 grid gap-6 lg:grid-cols-3">
+    <section class="kartu space-y-3 lg:col-span-1" aria-labelledby="judul-cp">
+      <h2 id="judul-cp" class="text-lg font-semibold text-slate-900">Kontak CP LPM</h2>
+      {% if cp %}
+        <p class="text-sm"><span class="font-medium">{{ cp.get_full_name }}</span><br>{{ cp.email }}{% if cp.telepon %}<br>{{ cp.telepon }}{% endif %}</p>
+      {% else %}
+        <p class="text-sm text-slate-600">CP LPM belum ditetapkan untuk periode ini.</p>
+      {% endif %}
+      <p class="text-sm text-slate-600">Jadwal: {{ audit.jadwal_audit_lapangan|date:"l, j F Y H.i"|default:"belum dijadwalkan" }}</p>
+      {% if hasil_awal %}
+        <h3 class="pt-2 font-semibold text-slate-900">Hasil awal</h3>
+        <p class="text-sm">D = <strong>{{ hasil_awal.deviasi }}</strong> · NE = <strong>{{ hasil_awal.ne }}</strong></p>
+      {% endif %}
+      {% if hasil_al %}
+        <h3 class="pt-2 font-semibold text-slate-900">Setelah Audit Lapangan</h3>
+        <p class="text-sm">D = <strong>{{ hasil_al.deviasi }}</strong> · NE = <strong>{{ hasil_al.ne }}</strong></p>
+        <p class="whitespace-pre-line text-sm text-slate-700">{{ audit.catatan_follow_up }}</p>
+      {% endif %}
+    </section>
+
+    <div class="space-y-6 lg:col-span-2">
+      <section class="kartu space-y-3" aria-labelledby="judul-penyumbang">
+        <h2 id="judul-penyumbang" class="text-lg font-semibold text-slate-900">Butir penyumbang deviasi</h2>
+        <p class="text-sm text-slate-600">
+          Butir dengan penilaian berbeda antar-auditor. <a href="{% url 'audits:perbedaan' audit.pk %}" class="text-blue-800 underline">Lihat tabel perbedaan lengkap</a>.
+        </p>
+        {% if audit.status == "PERLU_AUDIT_LAPANGAN" and adalah_ketua and not audit.revisi_al_dibuka %}
+          <form method="post" class="space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="aksi" value="buka_revisi">
+            <ul class="space-y-2 text-sm">
+              {% for b in penyumbang %}
+                <li><label class="flex items-start gap-2"><input type="checkbox" name="butir" value="{{ b.pk }}" checked class="mt-0.5 size-4"> <span><span class="font-medium">{{ b.kode }}</span> {{ b.pernyataan|truncatechars:100 }}</span></label></li>
+              {% empty %}
+                <li class="text-slate-600">Tidak ada butir berbeda.</li>
+              {% endfor %}
+            </ul>
+            {% if penyumbang %}
+              <p class="text-sm text-slate-600">Butir yang dicentang dibuka kembali untuk direvisi semua auditor berdasarkan hasil Audit Lapangan; kunci semua auditor direset.</p>
+              <button type="submit" class="tombol-kedua">Buka revisi penilaian</button>
+            {% endif %}
+          </form>
+        {% else %}
+          <ul class="space-y-1 text-sm">
+            {% for b in penyumbang %}<li><span class="font-medium">{{ b.kode }}</span> {{ b.pernyataan|truncatechars:100 }}</li>{% empty %}<li class="text-slate-600">Tidak ada butir berbeda.</li>{% endfor %}
+          </ul>
+        {% endif %}
+      </section>
+
+      {% if audit.status == "PERLU_AUDIT_LAPANGAN" %}
+        <section class="kartu space-y-3" aria-labelledby="judul-tim-al">
+          <h2 id="judul-tim-al" class="text-lg font-semibold text-slate-900">Status penilaian tim</h2>
+          <ul class="text-sm">
+            {% for p in tim %}
+              <li class="flex justify-between py-1"><span>{{ p.pengguna }}</span><span class="{% if p.dikunci_pada %}text-green-700{% else %}text-amber-700{% endif %}">{% if p.dikunci_pada %}Terkunci{% else %}Sedang merevisi{% endif %}</span></li>
+            {% endfor %}
+          </ul>
+          {% if ada_seri %}
+            <p class="text-sm text-red-700">Ada butir seri setelah revisi. <a href="{% url 'audits:rekonsiliasi' audit.pk %}" class="underline">Tetapkan kategorinya</a>.</p>
+          {% endif %}
+        </section>
+
+        {% if adalah_ketua %}
+          <section class="kartu space-y-3" aria-labelledby="judul-selesai">
+            <h2 id="judul-selesai" class="text-lg font-semibold text-slate-900">Selesaikan Audit Lapangan</h2>
+            <p class="text-sm text-slate-600">Sistem menghitung ulang D dan NE dari penilaian terkini. NE awal tetap tersimpan.</p>
+            <form method="post" class="space-y-3">
+              {% csrf_token %}
+              <input type="hidden" name="aksi" value="selesai">
+              <label class="block">
+                <span class="label">Catatan follow-up Audit Lapangan</span>
+                <textarea name="catatan" rows="4" required class="isian"></textarea>
+              </label>
+              <button type="submit" class="tombol-utama" {% if audit.revisi_al_dibuka or ada_seri %}disabled{% endif %}>Selesaikan dan hitung hasil</button>
+              {% if audit.revisi_al_dibuka %}<p class="text-xs text-slate-500">Menunggu semua auditor mengunci revisinya.</p>{% endif %}
+            </form>
+          </section>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+{% endblock content %}
