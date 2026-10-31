@@ -7,3 +7,6 @@ db.sqlite3
 media/
 staticfiles/
 .bin/
+
+# Dokumen asli klien (data pribadi, berkas besar); tidak masuk repo.
+docs/referensi/
