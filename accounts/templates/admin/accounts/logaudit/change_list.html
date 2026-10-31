@@ -1,0 +1,16 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  {% if bisa_ekspor %}
+    <li>
+      <form method="post" action="{% url 'ekspor:minta' %}" style="display: inline-flex; gap: 6px; align-items: center">
+        {% csrf_token %}
+        <input type="hidden" name="jenis" value="LOG">
+        <label>Dari <input type="date" name="dari" required></label>
+        <label>Sampai <input type="date" name="sampai" required></label>
+        <button type="submit" class="button">Ekspor Excel</button>
+      </form>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
