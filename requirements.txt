@@ -1,0 +1,14 @@
+Django>=5.2,<5.3
+dj-database-url>=2.3
+openpyxl>=3.1
+django-allauth[socialaccount]>=65.21,<66
+django-q2>=1.7
+# Di Windows perlu Pango dari MSYS2 (lihat .env.example).
+weasyprint>=62
+
+# Produksi: broker antrean Redis
+redis>=5
+
+# Tes
+pytest>=8
+pytest-django>=4.9

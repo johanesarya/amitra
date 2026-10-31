@@ -1,0 +1,13 @@
+{% extends "account/base_entrance.html" %}
+
+{% block head_title %}Akun tidak diizinkan{% endblock head_title %}
+
+{% block content %}
+  <h1 class="text-xl font-bold text-slate-900">Akun tidak diizinkan</h1>
+  <p class="text-sm text-slate-700">
+    {% if email %}Email <strong>{{ email }}</strong> tidak dapat digunakan.{% else %}Akun Google ini tidak dapat digunakan.{% endif %}
+    SI-AMI hanya menerima email terverifikasi dengan domain
+    {% for d in domain %}<strong>@{{ d }}</strong>{% if not forloop.last %}, {% endif %}{% empty %}kampus yang terdaftar{% endfor %}.
+  </p>
+  <a href="{% url 'account_login' %}" class="tombol-kedua">Masuk dengan akun lain</a>
+{% endblock content %}

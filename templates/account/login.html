@@ -1,0 +1,45 @@
+{% extends "account/base_entrance.html" %}
+{% load socialaccount %}
+
+{% block head_title %}Masuk{% endblock head_title %}
+
+{% block content %}
+  <h1 class="text-xl font-bold text-slate-900">Masuk ke SI-AMI</h1>
+  <p class="text-sm text-slate-700">
+    Gunakan akun Google dengan email kampus Anda.
+  </p>
+  {% if google_siap %}
+    <form method="post" action="{% provider_login_url 'google' %}">
+      {% csrf_token %}
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+      {% endif %}
+      <button type="submit" class="tombol-utama w-full">Masuk dengan Google</button>
+    </form>
+  {% else %}
+    <p class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="alert">
+      Login Google belum dikonfigurasi. Isi <code>GOOGLE_CLIENT_ID</code> dan <code>GOOGLE_CLIENT_SECRET</code> di
+      <code>.env</code>. Akun pengembang dapat masuk lewat <a class="underline" href="{% url 'admin:login' %}">halaman Administrasi</a>.
+    </p>
+  {% endif %}
+
+  {% comment %}FR-02: hanya akun tamu yang diundang LPM dapat masuk dengan password.{% endcomment %}
+  <details class="border-t border-slate-100 pt-4 text-sm" {% if form.errors %}open{% endif %}>
+    <summary class="cursor-pointer text-slate-700">Masuk sebagai tamu (email dan password)</summary>
+    <form method="post" action="{% url 'account_login' %}" class="mt-3 space-y-3">
+      {% csrf_token %}
+      {% if redirect_field_value %}<input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">{% endif %}
+      {% if form.non_field_errors %}
+        <p class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-red-800" role="alert">{{ form.non_field_errors|join:" " }}</p>
+      {% endif %}
+      <label class="block"><span class="label">Email</span>
+        <input type="email" name="login" value="{{ form.login.value|default:'' }}" required autocomplete="email" class="isian"></label>
+      <label class="block"><span class="label">Password</span>
+        <input type="password" name="password" required autocomplete="current-password" class="isian"></label>
+      <button type="submit" class="tombol-kedua w-full">Masuk</button>
+      <p class="text-xs text-slate-600">
+        Hanya untuk akun tamu yang diundang LPM. <a href="{% url 'account_reset_password' %}" class="underline">Lupa password?</a>
+      </p>
+    </form>
+  </details>
+{% endblock content %}
