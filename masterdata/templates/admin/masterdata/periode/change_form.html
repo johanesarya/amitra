@@ -1,0 +1,8 @@
+{% extends "admin/change_form.html" %}
+
+{% block object-tools-items %}
+  {% if original and perms.masterdata.add_standar %}
+    <li><a href="{% url 'admin:masterdata_periode_salin_standar' original.pk %}">Salin standar dari periode lain</a></li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
