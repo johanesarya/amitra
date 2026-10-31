@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block head_title %}Akses ditolak{% endblock head_title %}
+
+{% block content %}
+  <div class="kartu mx-auto max-w-lg space-y-3">
+    <h1 class="text-xl font-bold text-slate-900">Akses ditolak</h1>
+    <p class="text-sm text-slate-700">
+      {% if exception %}{{ exception }}{% else %}Anda tidak memiliki hak untuk membuka halaman ini.{% endif %}
+    </p>
+    <p class="text-sm text-slate-600">Bila menurut Anda ini keliru, hubungi Admin LPM.</p>
+    <a href="{% url 'beranda' %}" class="tombol-kedua">Kembali ke Tugas Saya</a>
+  </div>
+{% endblock content %}

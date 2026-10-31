@@ -1,0 +1,20 @@
+{% load static %}<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terjadi gangguan · SI-AMI v2</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="min-h-full bg-slate-50 text-slate-900 antialiased">
+  {% comment %}Tanpa base.html: halaman ini harus tetap tampil walau database atau konteks bermasalah.{% endcomment %}
+  <main class="mx-auto max-w-lg px-4 py-16">
+    <div class="kartu space-y-3">
+      <h1 class="text-xl font-bold">Terjadi gangguan pada sistem</h1>
+      <p class="text-sm text-slate-700">Isian SER dan penilaian yang sudah tersimpan tidak hilang. Silakan muat ulang halaman beberapa saat lagi.</p>
+      <p class="text-sm text-slate-600">Bila masalah berlanjut, hubungi Admin LPM.</p>
+      <a href="/" class="tombol-kedua">Kembali ke Tugas Saya</a>
+    </div>
+  </main>
+</body>
+</html>
