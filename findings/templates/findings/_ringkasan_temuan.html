@@ -1,0 +1,26 @@
+{% comment %}Ringkasan temuan untuk auditee dan dokumen (A. Kelebihan, B. KTS/OB, C. Peluang).{% endcomment %}
+<section class="kartu space-y-4" aria-labelledby="judul-ringkasan-temuan">
+  <h2 id="judul-ringkasan-temuan" class="text-lg font-semibold text-slate-900">Temuan</h2>
+  <div>
+    <h3 class="font-semibold text-slate-800">A. Kelebihan</h3>
+    <ul class="mt-2 space-y-2 text-sm">
+      {% for t in kelebihan %}<li><span class="font-medium">{{ t.pernyataan.kode }}</span> {{ t.uraian }}</li>{% empty %}<li class="text-slate-600">Tidak ada.</li>{% endfor %}
+    </ul>
+  </div>
+  <div>
+    <h3 class="font-semibold text-slate-800">B. KTS/OB</h3>
+    <ul class="mt-2 space-y-2 text-sm">
+      {% for t in kts_ob %}
+        <li><span class="font-semibold">{% if t.ptk %}{{ t.ptk.kode }} · {% endif %}{{ t.get_jenis_display }}</span> · <span class="font-medium">{{ t.pernyataan.kode }}</span> {{ t.uraian }}</li>
+      {% empty %}
+        <li class="text-slate-600">Tidak ada temuan KTS/OB.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div>
+    <h3 class="font-semibold text-slate-800">C. Peluang Peningkatan</h3>
+    <ul class="mt-2 space-y-2 text-sm">
+      {% for t in peluang %}<li class="whitespace-pre-line">{{ t.uraian }}</li>{% empty %}<li class="text-slate-600">Tidak ada.</li>{% endfor %}
+    </ul>
+  </div>
+</section>

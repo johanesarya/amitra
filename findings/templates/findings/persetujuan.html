@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load siami %}
+
+{% block head_title %}Hasil AMI {{ audit.unit }}{% endblock head_title %}
+
+{% block content %}
+  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
+  <div class="mt-2 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Hasil Audit Mutu Internal</h1>
+      <p class="mt-1 text-sm text-slate-600">{{ audit.unit }} · {{ audit.periode }} · {{ audit.get_status_display }}</p>
+    </div>
+    {% if audit.ptk.exists %}<a href="{% url 'findings:ptk' audit.pk %}" class="tombol-kedua">PTK</a>{% endif %}
+  </div>
+
+  {% if hasil %}
+    <dl class="mt-6 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+      <div class="kartu p-3"><dt class="text-slate-600">Nilai efektif (NE)</dt><dd class="text-xl font-bold">{{ hasil.ne }}</dd></div>
+      <div class="kartu p-3"><dt class="text-slate-600">Status KKM</dt><dd class="font-semibold {% if hasil.memenuhi_kkm %}text-green-700{% else %}text-red-700{% endif %}">{% if hasil.memenuhi_kkm %}Memenuhi KKM{% else %}Belum Memenuhi KKM{% endif %}</dd></div>
+      <div class="kartu p-3"><dt class="text-slate-600">Nilai kesimpulan (NK)</dt><dd class="text-xl font-bold">{{ hasil.nk|default:"—" }}</dd></div>
+      <div class="kartu p-3"><dt class="text-slate-600">Hasil akhir</dt><dd class="{% if hasil.hasil_akhir is None %}text-sm text-slate-600{% else %}text-xl font-bold{% endif %}">{{ hasil.hasil_akhir|default:"Menunggu keputusan LPM" }}</dd></div>
+    </dl>
+  {% endif %}
+
+  <div class="mt-6 grid gap-6 lg:grid-cols-3">
+    <div class="space-y-6 lg:col-span-2">
+      {% include "findings/_ringkasan_temuan.html" %}
+
+      <section class="kartu space-y-3" aria-labelledby="judul-kesimpulan">
+        <h2 id="judul-kesimpulan" class="text-lg font-semibold text-slate-900">Kesimpulan</h2>
+        {% if kesimpulan %}
+          <dl class="space-y-3 text-sm">
+            <div><dt class="font-semibold">A. Sistem dokumentasi: {{ opsi_kesimpulan|ambil:kesimpulan.skor_a }}</dt><dd class="whitespace-pre-line text-slate-700">{{ kesimpulan.penjelasan_a }}</dd></div>
+            <div><dt class="font-semibold">B. Implementasi SPMI: {{ opsi_kesimpulan|ambil:kesimpulan.skor_b }}</dt><dd class="whitespace-pre-line text-slate-700">{{ kesimpulan.penjelasan_b }}</dd></div>
+            <div><dt class="font-semibold">C. Tindak lanjut PTK periode lalu: {% if kesimpulan.c_tidak_berlaku %}Tidak berlaku{% else %}{{ opsi_kesimpulan|ambil:kesimpulan.skor_c }}{% endif %}</dt><dd class="whitespace-pre-line text-slate-700">{{ kesimpulan.penjelasan_c }}</dd></div>
+          </dl>
+          <h3 class="pt-2 font-semibold text-slate-800">Tujuan Audit</h3>
+          <ul class="space-y-1 text-sm">
+            {% for t in tujuan %}<li>{% if t in kesimpulan.tujuan_tercapai.all %}✓{% else %}✗{% endif %} {{ t.kode }}. {{ t.teks }}</li>{% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-slate-600">Belum diisi.</p>
+        {% endif %}
+      </section>
+
+      {% if nilai_auditor %}
+        <section class="kartu" aria-labelledby="judul-nilai">
+          <h2 id="judul-nilai" class="text-lg font-semibold text-slate-900">Nilai per auditor</h2>
+          <ul class="mt-2 text-sm">{% for orang, n in nilai_auditor %}<li class="flex justify-between py-0.5"><span>{{ orang }}</span><span class="font-medium">{{ n }}</span></li>{% endfor %}</ul>
+          <p class="mt-2 text-sm"><a href="{% url 'audits:perbedaan' audit.pk %}" class="text-blue-800 underline">Lihat penilaian per butir</a></p>
+        </section>
+      {% endif %}
+    </div>
+
+    <aside class="space-y-4 lg:sticky lg:top-4 lg:self-start">
+      {% if bisa_putuskan %}
+        <section class="kartu space-y-4" aria-labelledby="judul-setuju">
+          <h2 id="judul-setuju" class="text-lg font-semibold text-slate-900">Persetujuan auditee</h2>
+          <form method="post" class="space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="aksi" value="setuju">
+            {% for kunci, label in checklist %}
+              <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="checklist" value="{{ kunci }}" required class="mt-0.5 size-4"> <span>{{ label }}</span></label>
+            {% endfor %}
+            <p class="text-xs text-slate-600">Setelah disetujui, hasil menjadi Final dan tidak dapat diubah.</p>
+            <button type="submit" class="tombol-utama w-full">Setujui hasil AMI</button>
+          </form>
+          {% if not sudah_keberatan %}
+            <details class="text-sm">
+              <summary class="cursor-pointer text-slate-700">Ajukan keberatan (hanya sekali)</summary>
+              <form method="post" class="mt-2 space-y-2">
+                {% csrf_token %}
+                <input type="hidden" name="aksi" value="keberatan">
+                <label class="block"><span class="label">Isi keberatan</span><textarea name="keberatan" rows="4" required class="isian"></textarea></label>
+                <button type="submit" class="tombol-kedua w-full">Kirim keberatan</button>
+              </form>
+            </details>
+          {% else %}
+            <p class="text-xs text-slate-600">Keberatan sudah pernah diajukan; Anda hanya dapat menyetujui.</p>
+          {% endif %}
+        </section>
+      {% endif %}
+
+      {% if riwayat_persetujuan %}
+        <section class="kartu" aria-labelledby="judul-riwayat-p">
+          <h2 id="judul-riwayat-p" class="text-lg font-semibold text-slate-900">Riwayat persetujuan</h2>
+          <ol class="mt-2 space-y-2 text-sm">
+            {% for p in riwayat_persetujuan %}
+              <li class="border-l-2 border-slate-200 pl-3">
+                <p>{{ p.get_pihak_display }} · <strong>{{ p.get_keputusan_display }}</strong></p>
+                <p class="text-xs text-slate-500">{{ p.oleh }} · {{ p.waktu|date:"j M Y H.i" }}</p>
+                {% if p.keberatan %}<p class="text-xs text-slate-700">{{ p.keberatan }}</p>{% endif %}
+                {% if p.tanggapan %}<p class="text-xs text-slate-700"><span class="font-medium">Tanggapan:</span> {{ p.tanggapan }}</p>{% endif %}
+              </li>
+            {% endfor %}
+          </ol>
+        </section>
+      {% endif %}
+    </aside>
+  </div>
+{% endblock content %}

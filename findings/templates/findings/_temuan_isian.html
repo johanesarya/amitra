@@ -1,0 +1,31 @@
+<article id="temuan-{{ t.pk }}" class="kartu space-y-3 p-4">
+  <p class="text-sm">
+    <span class="rounded px-2 py-0.5 text-xs font-semibold {% if t.jenis == 'KELEBIHAN' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">{{ t.get_jenis_display }}</span>
+    {% if t.ptk and t.ptk.pk %}<span class="ml-1 text-xs font-semibold text-slate-700">{{ t.ptk.kode }}</span>{% endif %}
+    <span class="ml-1 font-semibold">{{ t.pernyataan.kode }}</span> {{ t.pernyataan.pernyataan|truncatechars:120 }}
+  </p>
+  {% if bisa_ubah %}
+    <form method="post" class="space-y-2">
+      {% csrf_token %}
+      <input type="hidden" name="aksi" value="uraian"><input type="hidden" name="temuan" value="{{ t.pk }}">
+      <label class="block"><span class="label">Uraian temuan</span><textarea name="uraian" rows="3" class="isian">{{ t.uraian }}</textarea></label>
+      <button type="submit" class="tombol-kedua px-3 py-1.5">Simpan uraian</button>
+    </form>
+    {% if t.saran %}
+      <details class="text-sm">
+        <summary class="cursor-pointer text-slate-700">Kondisi faktual dari auditor ({{ t.saran|length }})</summary>
+        <ul class="mt-1 space-y-1 text-slate-600">{% for orang, teks in t.saran %}<li><span class="font-medium">{{ orang }}:</span> {{ teks }}</li>{% endfor %}</ul>
+      </details>
+    {% endif %}
+  {% else %}
+    <p class="whitespace-pre-line text-sm text-slate-800">{{ t.uraian|default:"Uraian belum diisi." }}</p>
+    {% if bisa_usul %}
+      <form method="post" class="space-y-2">
+        {% csrf_token %}
+        <input type="hidden" name="aksi" value="usulan"><input type="hidden" name="jenis" value="URAIAN"><input type="hidden" name="temuan" value="{{ t.pk }}">
+        <label class="block"><span class="label">Usulkan uraian</span><textarea name="isi" rows="2" required class="isian"></textarea></label>
+        <button type="submit" class="tombol-kedua px-3 py-1.5">Kirim usulan</button>
+      </form>
+    {% endif %}
+  {% endif %}
+</article>

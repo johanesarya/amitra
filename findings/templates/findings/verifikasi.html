@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block head_title %}Verifikasi PTK periode lalu{% endblock head_title %}
+
+{% block content %}
+  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
+  <h1 class="mt-2 text-2xl font-bold text-slate-900">Verifikasi PTK periode lalu</h1>
+  <p class="mt-1 text-sm text-slate-600">
+    {{ audit.unit }} · audit {{ audit.periode }}{% if ringkasan.audit_lalu %} · PTK dari {{ ringkasan.audit_lalu.periode }}{% endif %}
+  </p>
+
+  {% if ringkasan.total %}
+    <dl class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="kartu p-3"><dt class="text-sm text-slate-600">Total PTK</dt><dd class="text-xl font-bold">{{ ringkasan.total }}</dd></div>
+      <div class="kartu p-3"><dt class="text-sm text-slate-600">Efektif</dt><dd class="text-xl font-bold text-green-700">{{ ringkasan.efektif }}</dd></div>
+      <div class="kartu p-3"><dt class="text-sm text-slate-600">Belum efektif</dt><dd class="text-xl font-bold text-red-700">{{ ringkasan.belum_efektif }}</dd></div>
+      <div class="kartu p-3"><dt class="text-sm text-slate-600">Belum diverifikasi</dt><dd class="text-xl font-bold">{{ ringkasan.belum_diverifikasi }}</dd></div>
+    </dl>
+    {% if not bisa_verifikasi %}
+      <p class="mt-4 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+        Verifikasi dilakukan tim auditor audit ini selama penilaian sampai perumusan temuan.
+      </p>
+    {% endif %}
+  {% endif %}
+
+  <div class="mt-6 space-y-4">
+    {% for p in daftar %}
+      <article id="ptk-{{ p.pk }}" class="kartu space-y-3">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <h2 class="font-semibold text-slate-900">{{ p.kode }} · {{ p.temuan.get_jenis_display }} · butir {{ p.temuan.pernyataan.kode }}</h2>
+          <span class="rounded px-2 py-0.5 text-xs {% if p.status == 'EFEKTIF' %}bg-green-100 text-green-800{% elif p.status == 'TIDAK_EFEKTIF' %}bg-red-100 text-red-800{% else %}bg-slate-100 text-slate-700{% endif %}">{{ p.get_status_display }}</span>
+        </div>
+        <p class="text-sm">{{ p.temuan.pernyataan.pernyataan }}</p>
+        <dl class="grid gap-2 text-sm sm:grid-cols-2">
+          <div class="sm:col-span-2"><dt class="font-medium">Uraian temuan</dt><dd class="whitespace-pre-line">{{ p.temuan.uraian }}</dd></div>
+          <div class="sm:col-span-2"><dt class="font-medium">Rencana tindakan</dt><dd class="whitespace-pre-line">{{ p.rencana_tindakan|default:"—" }}</dd></div>
+          <div><dt class="font-medium">Target</dt><dd>{{ p.target_tanggal|date:"j F Y"|default:"—" }}</dd></div>
+          <div><dt class="font-medium">PIC</dt><dd>{{ p.pic|default:"—" }}</dd></div>
+          <div class="sm:col-span-2"><dt class="font-medium">Realisasi</dt><dd class="whitespace-pre-line">{{ p.realisasi|default:"Belum diisi auditee." }}</dd></div>
+          <div class="sm:col-span-2"><dt class="font-medium">Bukti tindak lanjut</dt>
+            <dd><ul class="list-disc pl-5">
+              {% for b in p.bukti.all %}
+                <li>{% if b.jenis == "TAUTAN" %}<a href="{{ b.url }}" target="_blank" rel="noopener noreferrer" class="break-all text-blue-800 underline">{{ b.nama }}</a>{% else %}<a href="{% url 'findings:verifikasi_bukti' audit.pk b.pk %}" class="text-blue-800 underline">{{ b.nama }}</a>{% endif %}</li>
+              {% empty %}<li class="list-none text-slate-600">Tidak ada.</li>{% endfor %}
+            </ul></dd>
+          </div>
+        </dl>
+        {% if p.sudah_diverifikasi %}
+          <p class="rounded-md bg-slate-50 p-3 text-sm"><span class="font-medium">Catatan verifikasi:</span> {{ p.catatan_verifikasi }}
+            <span class="block text-xs text-slate-500">{{ p.diverifikasi_oleh }} · {{ p.diverifikasi_pada|date:"j M Y H.i" }}</span></p>
+        {% endif %}
+        {% if bisa_verifikasi %}
+          <form method="post" class="grid gap-3 border-t border-slate-100 pt-3 sm:grid-cols-[14rem_1fr_auto] sm:items-end">
+            {% csrf_token %}<input type="hidden" name="ptk" value="{{ p.pk }}">
+            <fieldset>
+              <legend class="label">Hasil verifikasi</legend>
+              <label class="mr-4 inline-flex items-center gap-2 text-sm"><input type="radio" name="hasil" value="EFEKTIF" required class="size-4" {% if p.status == 'EFEKTIF' %}checked{% endif %}> Efektif</label>
+              <label class="inline-flex items-center gap-2 text-sm"><input type="radio" name="hasil" value="TIDAK_EFEKTIF" class="size-4" {% if p.status == 'TIDAK_EFEKTIF' %}checked{% endif %}> Belum efektif</label>
+            </fieldset>
+            <label class="block"><span class="label">Catatan verifikasi</span><input type="text" name="catatan" required value="{{ p.catatan_verifikasi }}" class="isian"></label>
+            <button type="submit" class="tombol-utama">{% if p.sudah_diverifikasi %}Ubah{% else %}Simpan{% endif %}</button>
+          </form>
+        {% endif %}
+      </article>
+    {% empty %}
+      <p class="kartu text-sm text-slate-600">Unit ini tidak memiliki PTK dari periode lalu.</p>
+    {% endfor %}
+  </div>
+{% endblock content %}

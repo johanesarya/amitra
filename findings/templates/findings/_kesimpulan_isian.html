@@ -1,0 +1,15 @@
+{% comment %}Parameter: huruf, judul, skor, penjelasan, opsi, bisa_ubah{% endcomment %}
+<fieldset class="space-y-2 rounded-md border border-slate-200 p-3">
+  <legend class="px-1 font-semibold text-slate-900">{{ judul }}</legend>
+  <label class="block">
+    <span class="label">Penilaian</span>
+    <select name="skor_{{ huruf }}" class="isian" {% if not bisa_ubah %}disabled{% endif %}>
+      <option value="">— Pilih —</option>
+      {% for s, label in opsi %}<option value="{{ s }}" {% if s == skor %}selected{% endif %}>{{ s }} · {{ label }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="block">
+    <span class="label">Penjelasan</span>
+    <textarea name="penjelasan_{{ huruf }}" rows="3" class="isian" {% if not bisa_ubah %}disabled{% endif %}>{{ penjelasan }}</textarea>
+  </label>
+</fieldset>
