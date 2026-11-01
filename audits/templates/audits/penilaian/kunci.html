@@ -2,14 +2,16 @@
 
 {% block head_title %}Kunci penilaian{% endblock head_title %}
 
+{% block remah %}<li class="remah">Kunci penilaian</li>{% endblock remah %}
+
 {% block content %}
-  <p class="text-sm"><a href="{% url 'audits:penilaian' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← Kembali ke penilaian</a></p>
+  <p class="text-sm"><a href="{% url 'audits:penilaian' audit.pk %}" class="tautan">← Kembali ke penilaian</a></p>
   <div class="kartu mx-auto mt-4 max-w-2xl space-y-5">
     <h1 class="text-xl font-bold text-slate-900">Tinjau dan kunci penilaian</h1>
     <p class="text-sm text-slate-700">{{ audit.unit }} · {{ audit.periode }}</p>
 
     {% if belum %}
-      <div class="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status">
+      <div class="kotak-peringatan" role="status">
         <p class="font-semibold">{{ belum|length }} butir belum lengkap:</p>
         <ul class="mt-2 space-y-1">
           {% for b, kurang in belum %}
@@ -18,7 +20,7 @@
         </ul>
       </div>
     {% else %}
-      <p class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">Semua butir sudah dinilai lengkap.</p>
+      <p class="kotak-sukses" role="status">Semua butir sudah dinilai lengkap.</p>
     {% endif %}
 
     <p class="text-sm text-slate-700">

@@ -1,52 +1,67 @@
-<div id="bukti-{{ aktif_pk }}" class="space-y-3">
-  <h3 class="font-semibold text-slate-900">Bukti {% if bisa_ubah %}<span class="text-sm font-normal text-slate-600">(minimal satu)</span>{% endif %}</h3>
+<div id="bukti-{{ aktif_pk }}" class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div>
+      <h3 class="text-lg font-semibold text-slate-900">{% if not tanpa_nomor %}3. {% endif %}Bukti dokumen pendukung {% if bisa_ubah %}<span class="text-sm font-normal text-red-600">(minimal satu)</span>{% endif %}</h3>
+      {% if bisa_ubah %}<p class="text-sm text-slate-600">Tautan Google Drive dianjurkan; unggah berkas hanya bila tidak memungkinkan.</p>{% endif %}
+    </div>
+    <span class="lencana bg-slate-100 text-slate-600 ring-slate-500/20">{{ jawaban.bukti.all|length }} bukti</span>
+  </div>
   {% if galat %}
-    <p class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ galat }}</p>
+    <p class="kotak-galat" role="alert">{{ galat }}</p>
   {% endif %}
-  <ul class="divide-y divide-slate-100 rounded-md border border-slate-200 text-sm">
+  <ul class="space-y-2 text-sm">
     {% for b in jawaban.bukti.all %}
-      <li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-        <span class="min-w-0 break-all">
+      <li class="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 px-4 py-3">
+        <span class="flex size-9 shrink-0 items-center justify-center rounded-lg {% if b.jenis == 'TAUTAN' %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-700{% endif %}">
+          {% if b.jenis == "TAUTAN" %}{% include "_ikon.html" with n="tautan" %}{% else %}{% include "_ikon.html" with n="dokumen" %}{% endif %}
+        </span>
+        <span class="min-w-0 flex-1 break-all">
           {% if b.jenis == "TAUTAN" %}
-            <a href="{{ b.url }}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-800 underline">{{ b.nama }}</a>
-            <span class="text-xs text-slate-500">Google Drive</span>
+            <a href="{{ b.url }}" target="_blank" rel="noopener noreferrer" class="tautan">{{ b.nama }}</a>
+            <span class="block text-xs text-slate-500">Tautan Google Drive</span>
           {% else %}
-            <a href="{% url 'audits:bukti_unduh' audit.pk b.pk %}" class="font-medium text-blue-800 underline">{{ b.nama }}</a>
-            <span class="text-xs text-slate-500">{{ b.ukuran|filesizeformat }}</span>
+            <a href="{% url 'audits:bukti_unduh' audit.pk b.pk %}" class="tautan">{{ b.nama }}</a>
+            <span class="block text-xs text-slate-500">Berkas · {{ b.ukuran|filesizeformat }}</span>
           {% endif %}
         </span>
         {% if bisa_ubah %}
           <form hx-post="{% url 'audits:bukti_hapus' audit.pk b.pk %}" hx-target="#bukti-{{ aktif_pk }}" hx-swap="outerHTML"
                 hx-confirm="Hapus bukti &quot;{{ b.nama }}&quot;?">
-            <button type="submit" class="text-sm text-red-700 underline-offset-4 hover:underline">Hapus</button>
+            <button type="submit" class="rounded-md px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-50">Hapus</button>
           </form>
         {% endif %}
       </li>
     {% empty %}
-      <li class="px-3 py-2 text-slate-600">Belum ada bukti.</li>
+      <li class="rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center text-slate-600">Belum ada bukti.</li>
     {% endfor %}
   </ul>
 
   {% if bisa_ubah %}
     <form hx-post="{% url 'audits:bukti_tautan' audit.pk aktif_pk %}" hx-target="#bukti-{{ aktif_pk }}" hx-swap="outerHTML"
-          class="grid gap-2 sm:grid-cols-[1fr_12rem_auto]">
-      <label class="block">
-        <span class="sr-only">Tautan Google Drive</span>
-        <input type="url" name="url" required placeholder="https://drive.google.com/…" class="isian">
-      </label>
-      <label class="block">
-        <span class="sr-only">Nama bukti (opsional)</span>
-        <input type="text" name="nama" maxlength="255" placeholder="Nama bukti (opsional)" class="isian">
-      </label>
-      <button type="submit" class="tombol-kedua">Tambah tautan</button>
+          class="space-y-2 rounded-xl border border-dashed border-primer-200 bg-primer-50/40 p-4">
+      <p class="judul-kecil">Tambah tautan berkas atau folder (Google Drive)</p>
+      <div class="grid gap-2 sm:grid-cols-[1fr_14rem_auto]">
+        <label class="block">
+          <span class="sr-only">Tautan Google Drive</span>
+          <input type="url" name="url" required placeholder="https://drive.google.com/…" class="isian">
+        </label>
+        <label class="block">
+          <span class="sr-only">Nama bukti (opsional)</span>
+          <input type="text" name="nama" maxlength="255" placeholder="Nama bukti (opsional)" class="isian">
+        </label>
+        <button type="submit" class="tombol-lembut">{% include "_ikon.html" with n="tambah" k="size-4" %}Tambah tautan</button>
+      </div>
     </form>
-    <details class="text-sm">
-      <summary class="cursor-pointer text-slate-700">Unggah berkas (bila tidak bisa memakai Google Drive)</summary>
+    <details class="group rounded-xl border border-slate-200 text-sm">
+      <summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-3 font-medium text-slate-700">
+        {% include "_ikon.html" with n="awan" k="size-4" %}Unggah berkas (bila tidak bisa memakai Google Drive)
+        <svg aria-hidden="true" class="ml-auto size-4 text-slate-500 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+      </summary>
       <form hx-post="{% url 'audits:bukti_unggah' audit.pk aktif_pk %}" hx-target="#bukti-{{ aktif_pk }}" hx-swap="outerHTML"
-            hx-encoding="multipart/form-data" class="mt-2 flex flex-wrap items-center gap-2">
+            hx-encoding="multipart/form-data" class="flex flex-wrap items-center gap-2 border-t border-slate-100 px-4 py-3">
         <label>
           <span class="sr-only">Berkas bukti</span>
-          <input type="file" name="berkas" required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" class="text-sm">
+          <input type="file" name="berkas" required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium">
         </label>
         <button type="submit" class="tombol-kedua">Unggah</button>
         <p class="w-full text-xs text-slate-500">PDF, Word, Excel, PowerPoint, JPG, atau PNG; maksimal 20 MB.</p>

@@ -4,41 +4,52 @@
 {% block head_title %}Masuk{% endblock head_title %}
 
 {% block content %}
-  <h1 class="text-xl font-bold text-slate-900">Masuk ke SI-AMI</h1>
-  <p class="text-sm text-slate-700">
-    Gunakan akun Google dengan email kampus Anda.
-  </p>
+  <div class="text-center">
+    <h1 class="text-2xl font-bold text-slate-900">Masuk ke SI-AMI</h1>
+    <p class="mt-2 text-sm text-slate-600">Gunakan akun Google dengan email kampus Anda.</p>
+  </div>
   {% if google_siap %}
     <form method="post" action="{% provider_login_url 'google' %}">
       {% csrf_token %}
       {% if redirect_field_value %}
         <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
       {% endif %}
-      <button type="submit" class="tombol-utama w-full">Masuk dengan Google</button>
+      <button type="submit" class="tombol-kedua w-full py-3 text-base shadow-sm">
+        <svg aria-hidden="true" class="size-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+        Masuk dengan Google
+      </button>
     </form>
   {% else %}
-    <p class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="alert">
+    <p class="kotak-peringatan" role="alert">
       Login Google belum dikonfigurasi. Isi <code>GOOGLE_CLIENT_ID</code> dan <code>GOOGLE_CLIENT_SECRET</code> di
       <code>.env</code>. Akun pengembang dapat masuk lewat <a class="underline" href="{% url 'admin:login' %}">halaman Administrasi</a>.
     </p>
   {% endif %}
 
+  <div class="flex items-center gap-3 text-xs font-medium text-slate-400" aria-hidden="true">
+    <span class="h-px flex-1 bg-slate-200"></span>ATAU<span class="h-px flex-1 bg-slate-200"></span>
+  </div>
+
   {% comment %}FR-02: hanya akun tamu yang diundang LPM dapat masuk dengan password.{% endcomment %}
-  <details class="border-t border-slate-100 pt-4 text-sm" {% if form.errors %}open{% endif %}>
-    <summary class="cursor-pointer text-slate-700">Masuk sebagai tamu (email dan password)</summary>
-    <form method="post" action="{% url 'account_login' %}" class="mt-3 space-y-3">
+  <details class="group rounded-xl border border-slate-200 bg-slate-50 text-sm" {% if form.errors %}open{% endif %}>
+    <summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3 font-semibold text-slate-800">
+      <span class="flex size-8 items-center justify-center rounded-lg bg-primer-50 text-primer-700">{% include "_ikon.html" with n="tim" k="size-4" %}</span>
+      Masuk sebagai tamu (email dan password)
+      <svg aria-hidden="true" class="ml-auto size-4 text-slate-500 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+    </summary>
+    <form method="post" action="{% url 'account_login' %}" class="space-y-3 border-t border-slate-200 bg-white px-4 py-4">
       {% csrf_token %}
       {% if redirect_field_value %}<input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">{% endif %}
       {% if form.non_field_errors %}
-        <p class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-red-800" role="alert">{{ form.non_field_errors|join:" " }}</p>
+        <p class="kotak-galat" role="alert">{{ form.non_field_errors|join:" " }}</p>
       {% endif %}
       <label class="block"><span class="label">Email</span>
         <input type="email" name="login" value="{{ form.login.value|default:'' }}" required autocomplete="email" class="isian"></label>
       <label class="block"><span class="label">Password</span>
         <input type="password" name="password" required autocomplete="current-password" class="isian"></label>
-      <button type="submit" class="tombol-kedua w-full">Masuk</button>
+      <button type="submit" class="tombol-utama w-full">Masuk</button>
       <p class="text-xs text-slate-600">
-        Hanya untuk akun tamu yang diundang LPM. <a href="{% url 'account_reset_password' %}" class="underline">Lupa password?</a>
+        Hanya untuk akun tamu yang diundang LPM. <a href="{% url 'account_reset_password' %}" class="tautan">Lupa password?</a>
       </p>
     </form>
   </details>

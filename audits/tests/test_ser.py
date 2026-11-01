@@ -49,7 +49,7 @@ def isi_lengkap(audit, auditee, butir):
     ser.pastikan_jawaban(audit)
     for p in butir:
         j = audit.jawaban_ser.get(pernyataan=p)
-        ser.simpan_penjelasan(audit, p.pk, f"Penjelasan {p.kode}", j.versi, auditee)
+        ser.simpan_isian(audit, p.pk, f"Penjelasan {p.kode}", j.versi, auditee, kategori="SESUAI")
         ser.tambah_tautan(audit, p.pk, TAUTAN, auditee)
 
 
@@ -68,16 +68,31 @@ def test_butir_ser_sesuai_pernyataan_berlaku(audit):
 
 def test_simpan_pertama_memindahkan_status_ke_pengisian_ser(audit, auditee, butir):
     ser.pastikan_jawaban(audit)
-    ser.simpan_penjelasan(audit, butir[0].pk, "Ada profil lulusan.", 1, auditee)
+    ser.simpan_isian(audit, butir[0].pk, "Ada profil lulusan.", 1, auditee)
     audit.refresh_from_db()
     assert audit.status == Audit.Status.PENGISIAN_SER
     r = RiwayatStatus.objects.get(audit=audit)
     assert (r.dari, r.ke, r.oleh) == ("BELUM_MULAI", "PENGISIAN_SER", auditee)
 
 
-def test_jawaban_tidak_punya_field_skor():
-    # BR-01: auditee tidak memberi skor angka
-    assert not any("skor" in f.name or "nilai" in f.name for f in JawabanSER._meta.get_fields())
+def test_auditee_memilih_kategori_skala_auditor(audit, auditee, butir):
+    # BR-01 (revisi 31 Okt 2026): auditee memilih kategori 1–4 yang sama dengan auditor.
+    ser.pastikan_jawaban(audit)
+    j = ser.simpan_isian(audit, butir[0].pk, "Ada profil lulusan.", 1, auditee, kategori="OB")
+    assert j.kategori == "OB" and j.get_kategori_display() == "OB (Observasi)"
+    with pytest.raises(ValidationError, match="Kategori"):
+        ser.simpan_isian(audit, butir[0].pk, "x", j.versi, auditee, kategori="LUAR_BIASA")
+
+
+def test_butir_belum_lengkap_tanpa_kategori(audit, auditee, butir):
+    # FR-22: kategori, penjelasan, dan minimal satu bukti wajib.
+    ser.pastikan_jawaban(audit)
+    ser.simpan_isian(audit, butir[0].pk, "Ada", 1, auditee)
+    ser.tambah_tautan(audit, butir[0].pk, TAUTAN, auditee)
+    j = audit.jawaban_ser.get(pernyataan=butir[0])
+    assert not j.lengkap
+    ser.simpan_isian(audit, butir[0].pk, "Ada", j.versi, auditee, kategori="SESUAI")
+    assert audit.jawaban_ser.get(pernyataan=butir[0]).lengkap
 
 
 def test_lompatan_status_ilegal_ditolak(audit, admin_lpm):
@@ -87,7 +102,7 @@ def test_lompatan_status_ilegal_ditolak(audit, admin_lpm):
 
 def test_riwayat_status_tidak_bisa_diubah_atau_dihapus(audit, auditee, butir):
     ser.pastikan_jawaban(audit)
-    ser.simpan_penjelasan(audit, butir[0].pk, "x", 1, auditee)
+    ser.simpan_isian(audit, butir[0].pk, "x", 1, auditee)
     r = RiwayatStatus.objects.get()
     r.alasan = "ubah"
     with pytest.raises(ValueError):
@@ -100,16 +115,16 @@ def test_butir_di_luar_audit_ditolak(audit, auditee, standar):
     lain = PernyataanStandar.objects.create(standar=standar, kode="9.9", pernyataan="Khusus fakultas")
     lain.tipe_unit.set([TipeUnit.FAKULTAS])
     with pytest.raises(ValidationError, match="tidak termasuk"):
-        ser.simpan_penjelasan(audit, lain.pk, "x", 1, auditee)
+        ser.simpan_isian(audit, lain.pk, "x", 1, auditee)
 
 
 # --- Optimistic locking (NFR-05) ----------------------------------------------------
 
 def test_konflik_versi(audit, auditee, butir):
     ser.pastikan_jawaban(audit)
-    ser.simpan_penjelasan(audit, butir[0].pk, "Tab A", 1, auditee)
+    ser.simpan_isian(audit, butir[0].pk, "Tab A", 1, auditee)
     with pytest.raises(ser.KonflikVersi) as e:
-        ser.simpan_penjelasan(audit, butir[0].pk, "Tab B", 1, auditee)
+        ser.simpan_isian(audit, butir[0].pk, "Tab B", 1, auditee)
     assert e.value.jawaban.penjelasan == "Tab A" and e.value.jawaban.versi == 2
     assert JawabanSER.objects.get(audit=audit, pernyataan=butir[0]).penjelasan == "Tab A"
 
@@ -117,9 +132,9 @@ def test_konflik_versi(audit, auditee, butir):
 def test_simpan_butir_hemat_query(audit, auditee, butir, django_assert_max_num_queries):
     # Pengaman NFR-02 (simpan butir < 500 ms): jumlah query tetap kecil.
     ser.pastikan_jawaban(audit)
-    ser.simpan_penjelasan(audit, butir[0].pk, "awal", 1, auditee)
+    ser.simpan_isian(audit, butir[0].pk, "awal", 1, auditee)
     with django_assert_max_num_queries(8):
-        ser.simpan_penjelasan(audit, butir[0].pk, "lagi", 2, auditee)
+        ser.simpan_isian(audit, butir[0].pk, "lagi", 2, auditee)
 
 
 # --- Bukti (FR-19, NFR-06, NFR-09) --------------------------------------------------
@@ -193,11 +208,14 @@ def test_hapus_bukti_menghapus_berkas(audit, auditee, butir):
 
 def test_ringkasan_menyebut_butir_belum_lengkap(audit, auditee, butir):
     ser.pastikan_jawaban(audit)
-    ser.simpan_penjelasan(audit, butir[0].pk, "ada", 1, auditee)
+    ser.simpan_isian(audit, butir[0].pk, "ada", 1, auditee)
     ser.tambah_tautan(audit, butir[1].pk, TAUTAN, auditee)
     r = ser.ringkasan(audit)
     assert (r.total, r.lengkap) == (2, 0)
-    assert [(p.kode, kurang) for p, kurang in r.belum_lengkap] == [("1.1", ["bukti"]), ("1.2", ["penjelasan"])]
+    assert [(p.kode, kurang) for p, kurang in r.belum_lengkap] == [
+        ("1.1", ["kategori", "bukti"]),
+        ("1.2", ["kategori", "penjelasan"]),
+    ]
     assert not r.siap_dikirim
 
 
@@ -213,7 +231,7 @@ def test_kirim_mengunci_ser(audit, auditee, butir):
     assert audit.status == Audit.Status.PENILAIAN_AUDITOR and audit.ser_dikirim_pada
     j = audit.jawaban_ser.get(pernyataan=butir[0])
     with pytest.raises(ser.SERTerkunci, match="terkunci"):
-        ser.simpan_penjelasan(audit, butir[0].pk, "ubah", j.versi, auditee)
+        ser.simpan_isian(audit, butir[0].pk, "ubah", j.versi, auditee)
     with pytest.raises(ser.SERTerkunci):
         ser.tambah_tautan(audit, butir[0].pk, TAUTAN, auditee)
 
@@ -224,7 +242,7 @@ def test_ser_terkunci_setelah_deadline(audit, auditee, butir, periode):
     deadline(periode, timezone.localdate() - timedelta(days=1))
     ser.pastikan_jawaban(audit)
     with pytest.raises(ser.SERTerkunci, match="Batas pengisian"):
-        ser.simpan_penjelasan(audit, butir[0].pk, "telat", 1, auditee)
+        ser.simpan_isian(audit, butir[0].pk, "telat", 1, auditee)
 
 
 def test_hari_deadline_masih_bisa_diisi(audit, periode):
@@ -281,11 +299,13 @@ def test_autosave_lewat_endpoint(client, audit, auditee, butir):
     client.force_login(auditee)
     client.get(reverse("audits:ser", args=[audit.pk]))
     url = reverse("audits:ser_simpan", args=[audit.pk, butir[0].pk])
-    r = client.post(url, {"penjelasan": "Isi pertama", "versi": 1})
+    r = client.post(url, {"penjelasan": "Isi pertama", "kategori": "SESUAI", "versi": 1})
     assert r.status_code == 200 and r.json()["versi"] == 2 and r.json()["lengkap"] is False
+    assert audit.jawaban_ser.get(pernyataan=butir[0]).kategori == "SESUAI"
     konflik = client.post(url, {"penjelasan": "Tab lama", "versi": 1})
     assert konflik.status_code == 409
-    assert konflik.json()["data"]["penjelasan"] == "Isi pertama"
+    assert konflik.json()["data"] == {"penjelasan": "Isi pertama", "kategori": "SESUAI"}
+    assert client.post(url, {"penjelasan": "x", "kategori": "X", "versi": 2}).status_code == 400
 
 
 def test_endpoint_simpan_ditolak_untuk_selain_auditee(client, audit, auditor, admin_lpm, butir):

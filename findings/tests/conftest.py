@@ -34,7 +34,7 @@ def audit_dinilai(tim, admin_lpm, standar, auditee):
     audit = simpan_audit(**tim, oleh=admin_lpm)
     ser.pastikan_jawaban(audit)
     for b in audit.pernyataan_berlaku():
-        ser.simpan_penjelasan(audit, b.pk, f"Penjelasan {b.kode}", 1, auditee)
+        ser.simpan_isian(audit, b.pk, f"Penjelasan {b.kode}", 1, auditee, kategori="SESUAI")
         ser.tambah_tautan(audit, b.pk, "https://drive.google.com/file/d/x/view", auditee)
     ser.kirim(audit, auditee)
     audit.refresh_from_db()

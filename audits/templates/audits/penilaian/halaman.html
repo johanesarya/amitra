@@ -1,155 +1,198 @@
 {% extends "base.html" %}
+{% load siami %}
 
 {% block head_title %}Penilaian {{ audit.unit }}{% endblock head_title %}
+{% block remah %}
+  <li class="remah"><a href="{% url 'audits:detail' audit.pk %}" class="hover:text-slate-800">{{ audit.unit }}</a></li>
+  <li class="remah">Penilaian auditor</li>
+{% endblock remah %}
 
 {% block content %}
-  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
-  <div class="mt-2 flex flex-wrap items-end justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-900">Penilaian auditor</h1>
-      <p class="mt-1 text-sm text-slate-600">
-        {{ audit.unit }} · {{ audit.periode }} · {{ audit.get_status_display }} ·
-        {% if penugasan.ketua %}Ketua auditor{% else %}Auditor{% endif %}
+  <div class="space-y-6">
+    {% stepper audit %}
+
+    <section class="kartu flex flex-wrap items-start justify-between gap-6" aria-labelledby="judul-penilaian">
+      <div class="min-w-0 space-y-2">
+        <p class="flex flex-wrap items-center gap-2">
+          <span class="lencana {{ audit.status|kelas_status }}">{{ audit.get_status_display }}</span>
+          <span class="lencana bg-aksen-100 text-amber-900 ring-amber-500/30">{% if penugasan.ketua %}Ketua auditor{% else %}Auditor{% endif %}</span>
+        </p>
+        <h1 id="judul-penilaian" class="text-2xl font-bold text-slate-900">Penilaian auditor</h1>
+        <p class="text-sm text-slate-600">{{ audit.unit }} · {{ audit.periode }}</p>
+        <div class="max-w-md pt-1">
+          <p class="flex justify-between text-sm text-slate-700"><span><strong>{{ jumlah_lengkap }}</strong> dari {{ daftar|length }} butir selesai</span><span>{% widthratio jumlah_lengkap daftar|length 100 %}%</span></p>
+          <div class="mt-1.5 h-2 rounded-full bg-slate-200" aria-hidden="true"><div class="h-2 rounded-full bg-primer-700" style="width: {% widthratio jumlah_lengkap daftar|length 100 %}%"></div></div>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        {% if lihat_lain %}<a href="{% url 'audits:perbedaan' audit.pk %}" class="tombol-kedua">{% include "_ikon.html" with n="timbangan" k="size-4" %}Tabel perbedaan</a>{% endif %}
+        {% if terbuka %}<a href="{% url 'audits:penilaian_kunci' audit.pk %}" class="tombol-utama">{% include "_ikon.html" with n="gembok" k="size-4" %}Tinjau dan kunci penilaian</a>{% endif %}
+      </div>
+    </section>
+
+    {% if penugasan.dikunci_pada %}
+      <p class="kotak-netral flex items-center gap-2" role="status">{% include "_ikon.html" with n="gembok" k="size-4" %}Penilaian Anda dikunci pada {{ penugasan.dikunci_pada|date:"j F Y H.i" }}.</p>
+    {% elif revisi_al %}
+      <p class="kotak-peringatan" role="status">
+        Revisi pasca Audit Lapangan: hanya butir yang dibuka ketua yang dapat diubah. Kunci ulang penilaian Anda setelah selesai.
       </p>
-    </div>
-    <div class="flex flex-wrap items-center gap-3">
-      <p class="text-sm text-slate-700"><strong>{{ jumlah_lengkap }}</strong> dari {{ daftar|length }} butir selesai</p>
-      {% if lihat_lain %}<a href="{% url 'audits:perbedaan' audit.pk %}" class="tombol-kedua">Tabel perbedaan</a>{% endif %}
-      {% if terbuka %}<a href="{% url 'audits:penilaian_kunci' audit.pk %}" class="tombol-utama">Tinjau dan kunci penilaian</a>{% endif %}
-    </div>
-  </div>
+    {% elif not terbuka %}
+      <p class="kotak-netral" role="status">Penilaian sedang tidak dibuka.</p>
+    {% endif %}
 
-  {% if penugasan.dikunci_pada %}
-    <p class="mt-4 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" role="status">
-      Penilaian Anda dikunci pada {{ penugasan.dikunci_pada|date:"j F Y H.i" }}.
-    </p>
-  {% elif revisi_al %}
-    <p class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
-      Revisi pasca Audit Lapangan: hanya butir yang dibuka ketua yang dapat diubah. Kunci ulang penilaian Anda setelah selesai.
-    </p>
-  {% elif not terbuka %}
-    <p class="mt-4 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" role="status">Penilaian sedang tidak dibuka.</p>
-  {% endif %}
+    <div class="grid gap-6 lg:grid-cols-[16rem_1fr]" x-data="SIAMI.autosave('konfig-penilaian', ['kategori', 'dasar_penilaian', 'kondisi_faktual'])">
+      <nav aria-label="Daftar butir" class="kartu max-h-[75vh] overflow-y-auto p-0 lg:sticky lg:top-20 lg:self-start">
+        <p class="flex items-center justify-between border-b border-slate-100 px-4 py-3 font-semibold text-slate-900">Instrumen <span class="text-xs font-normal text-slate-500">{{ daftar|length }} butir</span></p>
+        <ul class="py-1">
+          {% for b, p, tb in daftar %}
+            <li>
+              <a href="?butir={{ b.pk }}" @click.prevent="pindah($el.href)"
+                 class="flex items-start gap-2 border-l-4 px-4 py-2 text-sm hover:bg-slate-50 {% if b.pk == aktif.pk %}border-aksen-400 bg-primer-50 font-semibold text-primer-900{% else %}border-transparent text-slate-700{% endif %} {% if tb %}opacity-60{% endif %}"
+                 {% if b.pk == aktif.pk %}aria-current="page"{% endif %}>
+                <span class="mt-1.5">{% include "audits/ser/_tanda.html" with pk=b.pk lengkap=p.lengkap %}</span>
+                <span class="min-w-0 flex-1 {% if tb %}line-through{% endif %}"><span class="font-medium">{{ b.kode }}</span> {{ b.pernyataan|truncatechars:44 }}{% if tb %} <em class="text-xs">(tidak berlaku)</em>{% endif %}</span>
+                {% if p.kategori and not tb %}<span class="lencana {{ p.kategori|kelas_kategori }}">{{ p.get_kategori_display|cut:" (Ketidaksesuaian)"|cut:" (Observasi)" }}</span>{% endif %}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
 
-  <div class="mt-6 grid gap-6 lg:grid-cols-[16rem_1fr]" x-data="SIAMI.autosave('konfig-penilaian', ['kategori', 'dasar_penilaian', 'kondisi_faktual'])">
-    <nav aria-label="Daftar butir" class="kartu max-h-[75vh] overflow-y-auto p-0 lg:sticky lg:top-4 lg:self-start">
-      <ul>
-        {% for b, p, tb in daftar %}
-          <li>
-            <a href="?butir={{ b.pk }}" @click.prevent="pindah($el.href)"
-               class="flex items-start gap-2 px-4 py-2 text-sm hover:bg-slate-50 {% if b.pk == aktif.pk %}bg-blue-50 font-semibold text-blue-900{% else %}text-slate-700{% endif %} {% if tb %}opacity-60{% endif %}"
-               {% if b.pk == aktif.pk %}aria-current="page"{% endif %}>
-              <span class="mt-1.5">{% include "audits/ser/_tanda.html" with pk=b.pk lengkap=p.lengkap %}</span>
-              <span><span class="font-medium">{{ b.kode }}</span> {{ b.pernyataan|truncatechars:50 }}{% if tb %} <em class="text-xs">(tidak berlaku)</em>{% endif %}</span>
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-    </nav>
-
-    <div class="space-y-4">
-      <p class="text-sm text-slate-600">Butir {{ nomor }} dari {{ daftar|length }} · {{ aktif.standar.kode }} {{ aktif.standar.nama }}</p>
-      <div class="grid gap-4 xl:grid-cols-2">
-        <section class="kartu space-y-4" aria-labelledby="judul-ser">
-          <h2 id="judul-ser" class="text-lg font-semibold text-slate-900">{{ aktif.kode }} · Isian auditee</h2>
-          <p class="text-slate-800">{{ aktif.pernyataan }}</p>
-          {% if aktif.pertanyaan_panduan %}<p class="text-sm text-slate-600"><span class="font-medium">Pertanyaan panduan:</span> {{ aktif.pertanyaan_panduan }}</p>{% endif %}
-          <div>
-            <p class="label">Hasil/penjelasan auditee</p>
-            <div class="whitespace-pre-line rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800">{{ jawaban.penjelasan|default:"Tidak diisi." }}</div>
-          </div>
-          {% include "audits/ser/_bukti.html" with aktif_pk=aktif.pk bisa_ubah=False %}
-          {% include "findings/_ptk_lalu.html" %}
-        </section>
-
-        <section class="kartu space-y-4" aria-labelledby="judul-nilai">
-          <h2 id="judul-nilai" class="text-lg font-semibold text-slate-900">Penilaian Anda</h2>
-          {% if aktif_tidak_berlaku %}
-            <p class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-              Butir ini ditandai <strong>tidak berlaku</strong> oleh ketua dan dikeluarkan dari perhitungan.
-              {% if kategori_final_aktif.alasan %}Alasan: {{ kategori_final_aktif.alasan }}{% endif %}
-            </p>
-          {% elif bisa_ubah %}
-            <fieldset>
-              <legend class="label">Kategori</legend>
-              <div class="space-y-2">
-                {% for nilai, label, arti in kategori_pilihan %}
-                  <label class="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 p-3 text-sm has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50">
-                    <input type="radio" name="kategori" value="{{ nilai }}" x-model="kategori" @change="tandaiKotor(); simpan()" class="mt-0.5 size-4">
-                    <span><span class="font-semibold text-slate-900">{{ label }}</span><span class="block text-slate-600">{{ arti }}</span></span>
-                  </label>
-                {% endfor %}
-              </div>
-            </fieldset>
+      <div class="min-w-0 space-y-6">
+        <div class="grid gap-6 xl:grid-cols-[1fr_24rem]">
+          <section class="kartu space-y-5" aria-labelledby="judul-ser">
             <div>
-              <label for="dasar" class="label">Dasar penilaian <span class="font-normal text-slate-500">(wajib)</span></label>
-              <textarea id="dasar" rows="4" class="isian" x-model="dasar_penilaian" @input="tandaiKotor()" @blur="simpan()"></textarea>
+              <p class="judul-kecil">{{ aktif.standar.kode }} {{ aktif.standar.nama }} · Butir {{ nomor }} dari {{ daftar|length }}</p>
+              <h2 id="judul-ser" class="mt-1 text-lg font-semibold text-slate-900">{{ aktif.kode }} · Isian auditee</h2>
+            </div>
+            <p class="rounded-lg bg-slate-50 px-4 py-3 text-slate-800"><span class="font-medium">Pernyataan standar:</span> {{ aktif.pernyataan }}</p>
+            {% if aktif.pertanyaan_panduan %}
+              <p class="flex items-start gap-2 rounded-lg border border-primer-100 bg-primer-50 px-4 py-3 text-sm text-primer-900">{% include "_ikon.html" with n="info" k="mt-0.5 size-4" %}<span><span class="font-medium">Pertanyaan panduan:</span> {{ aktif.pertanyaan_panduan }}</span></p>
+            {% endif %}
+            <div class="rounded-xl border border-green-200 bg-green-50/60 p-4">
+              <p class="flex flex-wrap items-center justify-between gap-2">
+                <span class="label mb-0">Kategori pilihan auditee</span>
+                {% if jawaban.kategori %}<span class="lencana {{ jawaban.kategori|kelas_kategori }}">{{ jawaban.get_kategori_display }}</span>{% else %}<span class="text-sm text-slate-600">Tidak dipilih.</span>{% endif %}
+              </p>
+              <p class="mt-2 flex items-start gap-1.5 text-xs text-slate-600">{% include "_ikon.html" with n="info" k="size-3.5" %}Cocokkan dengan bukti di bawah, lalu tetapkan kategori Anda sendiri.</p>
             </div>
             <div>
-              <label for="kondisi" class="label">
-                Kondisi faktual
-                <span class="font-normal text-slate-500" x-text="['KTS', 'OB'].includes(kategori) ? '(wajib untuk KTS/OB)' : '(opsional)'"></span>
-              </label>
-              <textarea id="kondisi" rows="3" class="isian" x-model="kondisi_faktual" @input="tandaiKotor()" @blur="simpan()"></textarea>
+              <p class="label">Hasil/penjelasan auditee</p>
+              <div class="max-h-72 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm whitespace-pre-line text-slate-800">{{ jawaban.penjelasan|default:"Tidak diisi." }}</div>
             </div>
-            {% include "audits/_status_autosave.html" %}
-          {% else %}
-            <dl class="space-y-2 text-sm">
-              <div><dt class="font-medium text-slate-700">Kategori</dt><dd>{{ penilaian.get_kategori_display|default:"—" }}</dd></div>
-              <div><dt class="font-medium text-slate-700">Dasar penilaian</dt><dd class="whitespace-pre-line">{{ penilaian.dasar_penilaian|default:"—" }}</dd></div>
-              <div><dt class="font-medium text-slate-700">Kondisi faktual</dt><dd class="whitespace-pre-line">{{ penilaian.kondisi_faktual|default:"—" }}</dd></div>
-            </dl>
-          {% endif %}
+            {% include "audits/ser/_bukti.html" with aktif_pk=aktif.pk bisa_ubah=False tanpa_nomor=True %}
+            {% include "findings/_ptk_lalu.html" %}
+          </section>
 
-          {% if ketua_bisa_tandai %}
-            <div class="border-t border-slate-100 pt-4">
-              {% if aktif_tidak_berlaku %}
-                <form method="post" action="{% url 'audits:tidak_berlaku' audit.pk aktif.pk %}">
-                  {% csrf_token %}
-                  <input type="hidden" name="aksi" value="batal">
-                  <button type="submit" class="tombol-kedua">Batalkan tanda tidak berlaku</button>
-                </form>
-              {% else %}
-                <details>
-                  <summary class="cursor-pointer text-sm text-slate-700">Tandai butir ini tidak berlaku (ketua)</summary>
-                  <form method="post" action="{% url 'audits:tidak_berlaku' audit.pk aktif.pk %}" class="mt-2 space-y-2">
-                    {% csrf_token %}
-                    <label class="block">
-                      <span class="label">Alasan</span>
-                      <textarea name="alasan" rows="2" required class="isian"></textarea>
+          <section class="kartu space-y-5 xl:sticky xl:top-20 xl:self-start" aria-labelledby="judul-nilai">
+            <div class="flex items-start justify-between gap-2">
+              <h2 id="judul-nilai" class="border-l-4 border-primer-700 pl-3 text-lg font-semibold text-slate-900">Penilaian Anda</h2>
+            </div>
+            {% if aktif_tidak_berlaku %}
+              <p class="kotak-netral">
+                Butir ini ditandai <strong>tidak berlaku</strong> oleh ketua dan dikeluarkan dari perhitungan.
+                {% if kategori_final_aktif.alasan %}Alasan: {{ kategori_final_aktif.alasan }}{% endif %}
+              </p>
+            {% elif bisa_ubah %}
+              <fieldset>
+                <legend class="label">Kategori <span class="text-red-600">*</span></legend>
+                <div class="grid grid-cols-2 gap-2">
+                  {% for nilai, label, arti in kategori_pilihan %}
+                    <label class="flex cursor-pointer flex-col gap-1.5 rounded-xl border border-slate-200 p-3 text-sm hover:border-primer-300 has-[:checked]:border-primer-600 has-[:checked]:bg-primer-50 has-[:checked]:ring-1 has-[:checked]:ring-primer-600">
+                      <span class="flex items-center justify-between gap-2">
+                        <span class="lencana {{ nilai|kelas_kategori }}">{{ label|cut:" (Ketidaksesuaian)"|cut:" (Observasi)" }}</span>
+                        <input type="radio" name="kategori" value="{{ nilai }}" x-model="kategori" @change="tandaiKotor(); simpan()" class="size-4 accent-primer-700">
+                      </span>
+                      <span class="font-semibold text-slate-900">{{ label }}</span>
+                      <span class="text-xs text-slate-600">{{ arti }}</span>
                     </label>
-                    <button type="submit" class="tombol-kedua">Tandai tidak berlaku</button>
+                  {% endfor %}
+                </div>
+              </fieldset>
+              {% if jawaban.kategori %}
+                <p x-show="kategori && kategori !== '{{ jawaban.kategori }}'" x-cloak class="kotak-peringatan text-xs">
+                  <strong>Berbeda dari pilihan auditee ({{ jawaban.get_kategori_display }}).</strong>
+                  Kategori auditee hanya pembanding dan tidak masuk perhitungan nilai.
+                </p>
+              {% endif %}
+              <div>
+                <label for="dasar" class="label">Dasar penilaian <span class="font-normal text-slate-500">(wajib)</span></label>
+                <textarea id="dasar" rows="4" class="isian" x-model="dasar_penilaian" @input="tandaiKotor()" @blur="simpan()"></textarea>
+              </div>
+              <div>
+                <label for="kondisi" class="label">
+                  Kondisi faktual
+                  <span class="font-normal text-slate-500" x-text="['KTS', 'OB'].includes(kategori) ? '(wajib untuk KTS/OB)' : '(opsional)'"></span>
+                </label>
+                <textarea id="kondisi" rows="3" class="isian" x-model="kondisi_faktual" @input="tandaiKotor()" @blur="simpan()"></textarea>
+              </div>
+              {% include "audits/_status_autosave.html" %}
+            {% else %}
+              <dl class="space-y-3 text-sm">
+                <div><dt class="label">Kategori</dt><dd>{% if penilaian.kategori %}<span class="lencana {{ penilaian.kategori|kelas_kategori }}">{{ penilaian.get_kategori_display }}</span>{% else %}—{% endif %}</dd></div>
+                <div><dt class="label">Dasar penilaian</dt><dd class="whitespace-pre-line">{{ penilaian.dasar_penilaian|default:"—" }}</dd></div>
+                <div><dt class="label">Kondisi faktual</dt><dd class="whitespace-pre-line">{{ penilaian.kondisi_faktual|default:"—" }}</dd></div>
+              </dl>
+            {% endif %}
+
+            {% if ketua_bisa_tandai %}
+              <div class="border-t border-slate-100 pt-4">
+                {% if aktif_tidak_berlaku %}
+                  <form method="post" action="{% url 'audits:tidak_berlaku' audit.pk aktif.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="aksi" value="batal">
+                    <button type="submit" class="tombol-kedua">Batalkan tanda tidak berlaku</button>
                   </form>
-                </details>
+                {% else %}
+                  <details class="rounded-lg border border-slate-200 text-sm">
+                    <summary class="cursor-pointer px-3 py-2 font-medium text-slate-700">Tandai butir ini tidak berlaku (ketua)</summary>
+                    <form method="post" action="{% url 'audits:tidak_berlaku' audit.pk aktif.pk %}" class="space-y-2 border-t border-slate-100 p-3">
+                      {% csrf_token %}
+                      <label class="block">
+                        <span class="label">Alasan</span>
+                        <textarea name="alasan" rows="2" required class="isian"></textarea>
+                      </label>
+                      <button type="submit" class="tombol-kedua">Tandai tidak berlaku</button>
+                    </form>
+                  </details>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            <div class="flex flex-wrap justify-between gap-2 border-t border-slate-100 pt-4">
+              {% if sebelumnya %}<a href="?butir={{ sebelumnya.pk }}" @click.prevent="pindah($el.href)" class="tombol-kedua">{% include "_ikon.html" with n="kiri" k="size-4" %}Butir sebelumnya</a>{% else %}<span></span>{% endif %}
+              {% if berikutnya %}
+                <a href="?butir={{ berikutnya.pk }}" @click.prevent="pindah($el.href)" class="tombol-utama">Butir berikutnya {% include "_ikon.html" with n="kanan" k="size-4" %}</a>
+              {% elif terbuka %}
+                <a href="{% url 'audits:penilaian_kunci' audit.pk %}" @click.prevent="pindah($el.href)" class="tombol-utama">Tinjau dan kunci penilaian</a>
               {% endif %}
             </div>
-          {% endif %}
-        </section>
-      </div>
+          </section>
+        </div>
 
-      {% if lihat_lain %}
-        <section class="kartu" aria-labelledby="judul-lain">
-          <h2 id="judul-lain" class="text-lg font-semibold text-slate-900">Penilaian auditor lain</h2>
-          <ul class="mt-3 divide-y divide-slate-100 text-sm">
-            {% for p in penilaian_lain %}
-              <li class="py-2">
-                <p><span class="font-medium">{{ p.auditor }}</span>: {{ p.get_kategori_display|default:"belum dinilai" }}</p>
-                {% if p.dasar_penilaian %}<p class="text-slate-600">Dasar: {{ p.dasar_penilaian }}</p>{% endif %}
-                {% if p.kondisi_faktual %}<p class="text-slate-600">Kondisi faktual: {{ p.kondisi_faktual }}</p>{% endif %}
-              </li>
-            {% empty %}
-              <li class="py-2 text-slate-600">Belum ada.</li>
-            {% endfor %}
-          </ul>
-        </section>
-      {% endif %}
-
-      <div class="flex flex-wrap justify-between gap-2">
-        {% if sebelumnya %}<a href="?butir={{ sebelumnya.pk }}" @click.prevent="pindah($el.href)" class="tombol-kedua">← Butir sebelumnya</a>{% else %}<span></span>{% endif %}
-        {% if berikutnya %}
-          <a href="?butir={{ berikutnya.pk }}" @click.prevent="pindah($el.href)" class="tombol-utama">Butir berikutnya →</a>
-        {% elif terbuka %}
-          <a href="{% url 'audits:penilaian_kunci' audit.pk %}" @click.prevent="pindah($el.href)" class="tombol-utama">Tinjau dan kunci penilaian</a>
+        {% if lihat_lain %}
+          <section class="kartu" aria-labelledby="judul-lain">
+            <h2 id="judul-lain" class="text-lg font-semibold text-slate-900">Penilaian auditor lain</h2>
+            <ul class="mt-3 grid gap-3 text-sm md:grid-cols-2">
+              {% for p in penilaian_lain %}
+                <li class="space-y-1 rounded-xl border border-slate-200 p-4">
+                  <p class="flex flex-wrap items-center justify-between gap-2"><span class="font-medium">{{ p.auditor }}</span>{% if p.kategori %}<span class="lencana {{ p.kategori|kelas_kategori }}">{{ p.get_kategori_display }}</span>{% else %}<span class="text-slate-500">belum dinilai</span>{% endif %}</p>
+                  {% if p.dasar_penilaian %}<p class="text-slate-600">Dasar: {{ p.dasar_penilaian }}</p>{% endif %}
+                  {% if p.kondisi_faktual %}<p class="text-slate-600">Kondisi faktual: {{ p.kondisi_faktual }}</p>{% endif %}
+                </li>
+              {% empty %}
+                <li class="text-slate-600">Belum ada.</li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% else %}
+          <section class="kartu flex flex-wrap items-center gap-4" aria-labelledby="judul-rahasia">
+            <span class="flex size-11 items-center justify-center rounded-xl bg-primer-50 text-primer-700">{% include "_ikon.html" with n="gembok" k="size-6" %}</span>
+            <div class="min-w-0 flex-1">
+              <h2 id="judul-rahasia" class="font-semibold text-slate-900">Penilaian mandiri dan independen</h2>
+              <p class="text-sm text-slate-600">Penilaian auditor lain baru dapat Anda lihat setelah Anda mengunci penilaian, sehingga setiap auditor menilai tanpa saling memengaruhi.</p>
+            </div>
+          </section>
         {% endif %}
       </div>
     </div>

@@ -2,43 +2,50 @@
 
 {% block head_title %}Analitik{% endblock head_title %}
 
+{% block remah %}<li class="remah">Analitik</li>{% endblock remah %}
+
 {% block content %}
+  <div class="space-y-6">
   <div class="flex flex-wrap items-end justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-900">Analitik mutu</h1>
+      <span class="lencana bg-green-50 text-green-700 ring-green-600/20">Hanya audit berstatus Final</span>
+      <h1 class="mt-2 text-3xl font-bold text-slate-900">Analitik mutu</h1>
       <p class="mt-1 text-sm text-slate-600">Hanya audit yang sudah Final. {% if periode %}{{ periode }} · {{ jumlah_audit }} audit{% endif %}</p>
     </div>
-    <a href="{% url 'ekspor:daftar' %}" class="tombol-kedua">Unduhan saya</a>
+    <a href="{% url 'ekspor:daftar' %}" class="tombol-kedua">{% include "_ikon.html" with n="unduh" k="size-4" %}Unduhan saya</a>
   </div>
 
   {% if not periode %}
-    <p class="kartu mt-6 text-sm text-slate-600">Belum ada audit Final.</p>
+    <div class="kartu py-12 text-center"><span class="mx-auto flex size-12 items-center justify-center rounded-full bg-primer-50 text-primer-700">{% include "_ikon.html" with n="grafik" k="size-6" %}</span><p class="mt-3 text-sm text-slate-600">Belum ada audit Final.</p></div>
   {% else %}
-    <form method="get" class="kartu mt-6 grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-5" aria-label="Saring analitik">
+    <form method="get" class="kartu grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-5" aria-label="Saring analitik">
       {% for field in form %}
         <div><label for="{{ field.id_for_label }}" class="label">{{ field.label }}</label>{{ field }}</div>
       {% endfor %}
-      <div class="flex items-end"><button type="submit" class="tombol-kedua w-full">Terapkan</button></div>
+      <div class="flex items-end"><button type="submit" class="tombol-utama w-full">Terapkan</button></div>
     </form>
 
-    <section class="kartu mt-6 space-y-3" aria-labelledby="judul-butir">
-      <h2 id="judul-butir" class="text-lg font-semibold text-slate-900">Skor per butir standar</h2>
+    <section class="kartu space-y-3" aria-labelledby="judul-butir">
+      <h2 id="judul-butir" class="text-lg font-semibold text-slate-900">Skor rata-rata per butir standar</h2>
+      <ul class="flex flex-wrap gap-2 text-xs" aria-label="Keterangan warna">
+        <li class="lencana bg-red-50 text-red-700 ring-red-600/20">KTS</li><li class="lencana bg-amber-50 text-amber-800 ring-amber-600/25">OB</li><li class="lencana bg-green-50 text-green-700 ring-green-600/20">Sesuai</li><li class="lencana bg-blue-50 text-blue-700 ring-blue-600/20">Pelampauan</li>
+      </ul>
       <p class="text-sm text-slate-600">
         Rata-rata skor kategori final (skala 1–{{ butir.skor_maks }}). Garis putus-putus hijau = skor Sesuai ({{ butir.skor_sesuai }}).
       </p>
       {% if butir.baris %}
         <div class="overflow-x-auto">{{ svg_butir }}</div>
-        <details class="text-sm">
-          <summary class="cursor-pointer text-slate-700">Tabel data ({{ butir.baris|length }} butir)</summary>
-          <div class="mt-2 overflow-x-auto">
+        <details class="rounded-xl border border-slate-200 text-sm">
+          <summary class="cursor-pointer px-4 py-3 font-medium text-primer-700">Tabel data ({{ butir.baris|length }} butir)</summary>
+          <div class="overflow-x-auto border-t border-slate-100">
             <table class="w-full min-w-[640px] text-left text-sm">
-              <thead class="border-b border-slate-200 text-slate-700">
-                <tr><th class="py-1 pr-3">Butir</th><th class="px-2">Rata-rata</th><th class="px-2">KTS</th><th class="px-2">OB</th><th class="px-2">Sesuai</th><th class="px-2">Pelampauan</th><th class="px-2">n</th></tr>
+              <thead class="kepala-tabel">
+                <tr><th class="px-4 py-2">Butir</th><th class="px-2">Rata-rata</th><th class="px-2">KTS</th><th class="px-2">OB</th><th class="px-2">Sesuai</th><th class="px-2">Pelampauan</th><th class="px-2">n</th></tr>
               </thead>
               <tbody class="divide-y divide-slate-100">
                 {% for r in butir.baris %}
                   <tr>
-                    <th scope="row" class="py-1 pr-3 font-normal"><span class="font-medium">{{ r.butir.kode }}</span> {{ r.butir.pernyataan|truncatechars:70 }}</th>
+                    <th scope="row" class="px-4 py-2 font-normal"><span class="font-medium">{{ r.butir.kode }}</span> {{ r.butir.pernyataan|truncatechars:70 }}</th>
                     <td class="px-2 font-medium">{{ r.rata }}</td>
                     <td class="px-2">{{ r.jumlah.KTS }}</td><td class="px-2">{{ r.jumlah.OB }}</td>
                     <td class="px-2">{{ r.jumlah.SESUAI }}</td><td class="px-2">{{ r.jumlah.PELAMPAUAN }}</td>
@@ -54,12 +61,13 @@
       {% endif %}
     </section>
 
-    <div class="mt-6 grid gap-6 lg:grid-cols-2">
+    <div class="grid gap-6 lg:grid-cols-2">
       <section class="kartu" aria-labelledby="judul-tren">
         <h2 id="judul-tren" class="text-lg font-semibold text-slate-900">Tren per unit</h2>
-        <ul class="mt-2 divide-y divide-slate-100 text-sm">
+        <p class="text-sm text-slate-500">Nilai efektif final dan temuan per periode</p>
+        <ul class="mt-3 space-y-2 text-sm">
           {% for u in unit_final %}
-            <li class="flex justify-between py-1.5"><span>{{ u }} <span class="text-xs text-slate-500">{{ u.tipe }}</span></span><a href="{% url 'analitik:tren' u.pk %}" class="text-blue-800 underline">Lihat tren</a></li>
+            <li><a href="{% url 'analitik:tren' u.pk %}" class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 hover:bg-slate-50"><span><span class="font-medium text-slate-900">{{ u }}</span> <span class="lencana ml-1 bg-primer-50 text-primer-700 ring-primer-600/20">{{ u.tipe }}</span></span><span class="flex items-center gap-1 font-medium text-primer-700">Lihat tren {% include "_ikon.html" with n="kanan" k="size-4" %}</span></a></li>
           {% empty %}
             <li class="py-1.5 text-slate-600">Tidak ada unit.</li>
           {% endfor %}
@@ -67,8 +75,8 @@
       </section>
 
       <section class="kartu space-y-4" aria-labelledby="judul-rapor">
-        <h2 id="judul-rapor" class="text-lg font-semibold text-slate-900">Rapor dan rekap (Excel)</h2>
-        <p class="text-sm text-slate-600">Berkas dibuat di latar belakang; pantau dan unduh di <a href="{% url 'ekspor:daftar' %}" class="underline">Unduhan saya</a>.</p>
+        <h2 id="judul-rapor" class="flex items-center gap-2 text-lg font-semibold text-slate-900">{% include "_ikon.html" with n="dokumen" %}Rapor dan rekap (Excel)</h2>
+        <p class="text-sm text-slate-600">Berkas dibuat di latar belakang; pantau dan unduh di <a href="{% url 'ekspor:daftar' %}" class="tautan">Unduhan saya</a>.</p>
         {% if boleh_semua %}
           <form method="post" action="{% url 'ekspor:minta' %}" class="flex flex-wrap items-end gap-2">
             {% csrf_token %}<input type="hidden" name="jenis" value="RAPOR"><input type="hidden" name="periode" value="{{ periode.pk }}">
@@ -97,4 +105,5 @@
       </section>
     </div>
   {% endif %}
+  </div>
 {% endblock content %}

@@ -51,6 +51,11 @@ def daftar_tilik(audit):
     jawaban = {j.pernyataan_id: j for j in audit.jawaban_ser.prefetch_related("bukti")}
     for r in baris:
         r["jawaban"] = jawaban.get(r["butir"].pk)
+        ka = r["kategori_auditee"]
+        r["auditee"] = {
+            "label": r["label_auditee"],
+            "skor": params.skor(ka) if ka and not r["tidak_berlaku"] else None,
+        }
         r["sel"] = [
             {
                 "penilaian": p,
@@ -121,7 +126,7 @@ def excel_daftar_tilik(audit):
     ws.append([f"Daftar Tilik — {audit.unit} — {audit.periode}"])
     ws["A1"].font = Font(bold=True, size=12)
     ws.append([])
-    judul = ["Kode", "Pernyataan standar", "Hasil/penjelasan auditee", "Bukti"]
+    judul = ["Kode", "Pernyataan standar", "Kategori auditee", "Skor auditee", "Hasil/penjelasan auditee", "Bukti"]
     for a in data["auditor"]:
         nama = str(a.pengguna)
         judul += [f"{nama} — kategori", f"{nama} — skor", f"{nama} — dasar penilaian", f"{nama} — kondisi faktual"]
@@ -135,6 +140,8 @@ def excel_daftar_tilik(audit):
         baris = [
             r["butir"].kode,
             r["butir"].pernyataan,
+            r["auditee"]["label"],
+            r["auditee"]["skor"],
             j.penjelasan if j else "",
             "\n".join(b.url or b.nama for b in j.bukti.all()) if j else "",
         ]
@@ -152,10 +159,10 @@ def excel_daftar_tilik(audit):
     ws.append([])
     # Nama auditor di kolom kategori, N di kolom skor masing-masing.
     ws.append(
-        ["Nilai per auditor (N)", "", "", ""]
+        ["Nilai per auditor (N)", "", "", "", "", ""]
         + [v for orang, n in data["nilai_auditor"] for v in (str(orang), n, "", "")]
     )
-    for kolom, lebar in zip("ABCD", (10, 50, 50, 40)):
+    for kolom, lebar in zip("ABCDEF", (10, 50, 18, 8, 50, 40)):
         ws.column_dimensions[kolom].width = lebar
     buf = io.BytesIO()
     wb.save(buf)

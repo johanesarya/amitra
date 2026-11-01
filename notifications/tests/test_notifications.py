@@ -232,7 +232,7 @@ def test_banner_tenggat_muncul_lalu_hilang(client, audit_baru, periode, auditee)
     assert "Tenggat pengisian ser" in isi
     ser.pastikan_jawaban(audit_baru)
     for b in audit_baru.pernyataan_berlaku():
-        ser.simpan_penjelasan(audit_baru, b.pk, "x", audit_baru.jawaban_ser.get(pernyataan=b).versi, auditee)
+        ser.simpan_isian(audit_baru, b.pk, "x", audit_baru.jawaban_ser.get(pernyataan=b).versi, auditee, kategori="SESUAI")
         ser.tambah_tautan(segarkan(audit_baru), b.pk, "https://drive.google.com/file/d/x/view", auditee)
     ser.kirim(segarkan(audit_baru), auditee)
     assert "jatuh tempo" not in client.get(reverse("beranda")).content.decode()

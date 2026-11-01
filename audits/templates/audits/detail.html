@@ -1,73 +1,77 @@
 {% extends "base.html" %}
+{% load siami %}
 
 {% block head_title %}Audit {{ audit.unit }}{% endblock head_title %}
 
+{% block remah %}<li class="remah">{{ audit.unit }}</li>{% endblock remah %}
+
 {% block content %}
-  <p class="text-sm"><a href="{% url 'beranda' %}" class="text-blue-800 underline-offset-4 hover:underline">← Tugas Saya</a></p>
-  <div class="mt-2 flex flex-wrap items-start justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-900">{{ audit.unit }}</h1>
-      <p class="mt-1 text-sm text-slate-600">
-        {{ audit.periode }} · {{ audit.unit.tipe }} ·
-        Lingkup: {% for l in audit.lingkup.all %}{{ l }}{% if not forloop.last %}, {% endif %}{% endfor %}
-      </p>
+  <div class="space-y-6">
+  {% stepper audit %}
+
+  <section class="kartu space-y-5">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0 space-y-1">
+        <p class="flex flex-wrap items-center gap-2">
+          <span class="lencana {{ audit.status|kelas_status }}">{{ audit.get_status_display }}</span>
+          {% if penugasan_saya %}<span class="lencana bg-aksen-100 text-amber-900 ring-amber-500/30">Peran Anda di audit ini: {% if penugasan_saya.ketua %}Ketua auditor{% else %}{{ penugasan_saya.get_peran_display }}{% endif %}</span>{% endif %}
+        </p>
+        <h1 class="text-2xl font-bold text-slate-900">{{ audit.unit }}</h1>
+        <p class="text-sm text-slate-600">
+          {{ audit.periode }} · {{ audit.unit.tipe }} ·
+          Lingkup: {% for l in audit.lingkup.all %}{{ l }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        </p>
+      </div>
     </div>
-    <span class="rounded bg-slate-100 px-3 py-1 text-sm text-slate-700">{{ audit.get_status_display }}</span>
-  </div>
 
-  {% if penugasan_saya %}
-    <p class="mt-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-      Peran Anda di audit ini: <strong>{% if penugasan_saya.ketua %}Ketua auditor{% else %}{{ penugasan_saya.get_peran_display }}{% endif %}</strong>.
-    </p>
-  {% endif %}
-
-  <div class="mt-4 flex flex-wrap items-center gap-2">
-    {% if bisa_isi_ser %}
-      <a href="{% url 'audits:ser' audit.pk %}" class="tombol-utama">Isi SER</a>
-    {% elif bisa_lihat_ser %}
-      <a href="{% url 'audits:ser' audit.pk %}" class="tombol-utama">Lihat SER</a>
-    {% else %}
-      <p class="text-sm text-slate-600">SER dapat dilihat setelah auditee mengirimnya.</p>
-    {% endif %}
-    {% if bisa_buka_kunci %}
-      <a href="{% url 'audits:ser_buka_kunci' audit.pk %}" class="tombol-kedua">Buka kunci / perpanjang SER</a>
-    {% endif %}
-    <a href="{% url 'documents:daftar' audit.pk %}" class="tombol-kedua">Dokumen</a>
-    {% if perms.accounts.view_logaudit %}
-      <a href="{% url 'admin:accounts_logaudit_changelist' %}?audit_id={{ audit.pk }}" class="tombol-kedua">Log</a>
-    {% endif %}
-    {% if perms.audits.view_audit %}
-      <form method="post" action="{% url 'ekspor:minta' %}">
-        {% csrf_token %}<input type="hidden" name="jenis" value="DATA_AUDIT"><input type="hidden" name="audit" value="{{ audit.pk }}">
-        <button type="submit" class="tombol-kedua">Ekspor data mentah</button>
-      </form>
-    {% endif %}
-    {% if adalah_auditor and penilaian_dimulai %}
-      <a href="{% url 'audits:penilaian' audit.pk %}" class="{% if penilaian_terbuka_saya %}tombol-utama{% else %}tombol-kedua{% endif %}">
-        {% if penilaian_terbuka_saya %}Nilai butir{% else %}Lihat penilaian saya{% endif %}
-      </a>
-    {% endif %}
-    {% if lihat_perbedaan %}
-      <a href="{% url 'audits:perbedaan' audit.pk %}" class="tombol-kedua">Tabel perbedaan</a>
-    {% endif %}
-    {% if adalah_ketua_atau_staf and jumlah_seri %}
-      <a href="{% url 'audits:rekonsiliasi' audit.pk %}" class="tombol-utama">Rekonsiliasi ({{ jumlah_seri }} butir seri)</a>
-    {% endif %}
-    {% if adalah_ketua_atau_staf and audit.status == "PERLU_AUDIT_LAPANGAN" or adalah_ketua_atau_staf and audit.catatan_follow_up %}
-      <a href="{% url 'audits:audit_lapangan' audit.pk %}" class="tombol-kedua">Audit Lapangan</a>
-    {% endif %}
-    {% if bisa_perumusan %}
-      <a href="{% url 'findings:perumusan' audit.pk %}" class="{% if audit.status == 'PERUMUSAN_TEMUAN' and penugasan_saya.ketua %}tombol-utama{% else %}tombol-kedua{% endif %}">Perumusan Temuan</a>
-    {% endif %}
-    {% if bisa_lihat_hasil %}
-      <a href="{% url 'findings:persetujuan' audit.pk %}" class="{% if audit.status == 'MENUNGGU_PERSETUJUAN' and penugasan_saya.peran == 'AUDITEE' %}tombol-utama{% else %}tombol-kedua{% endif %}">
-        {% if audit.status == "MENUNGGU_PERSETUJUAN" and penugasan_saya.peran == "AUDITEE" %}Tinjau dan setujui hasil{% else %}Hasil AMI{% endif %}
-      </a>
-    {% endif %}
-  </div>
+    <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+      {% if bisa_isi_ser %}
+        <a href="{% url 'audits:ser' audit.pk %}" class="tombol-utama">Isi SER</a>
+      {% elif bisa_lihat_ser %}
+        <a href="{% url 'audits:ser' audit.pk %}" class="tombol-utama">Lihat SER</a>
+      {% else %}
+        <p class="text-sm text-slate-600">SER dapat dilihat setelah auditee mengirimnya.</p>
+      {% endif %}
+      {% if adalah_auditor and penilaian_dimulai %}
+        <a href="{% url 'audits:penilaian' audit.pk %}" class="{% if penilaian_terbuka_saya %}tombol-utama{% else %}tombol-kedua{% endif %}">
+          {% if penilaian_terbuka_saya %}Nilai butir{% else %}Lihat penilaian saya{% endif %}
+        </a>
+      {% endif %}
+      {% if lihat_perbedaan %}
+        <a href="{% url 'audits:perbedaan' audit.pk %}" class="tombol-kedua">Tabel perbedaan</a>
+      {% endif %}
+      {% if adalah_ketua_atau_staf and jumlah_seri %}
+        <a href="{% url 'audits:rekonsiliasi' audit.pk %}" class="tombol-utama">Rekonsiliasi ({{ jumlah_seri }} butir seri)</a>
+      {% endif %}
+      {% if adalah_ketua_atau_staf and audit.status == "PERLU_AUDIT_LAPANGAN" or adalah_ketua_atau_staf and audit.catatan_follow_up %}
+        <a href="{% url 'audits:audit_lapangan' audit.pk %}" class="tombol-kedua">Audit Lapangan</a>
+      {% endif %}
+      {% if bisa_perumusan %}
+        <a href="{% url 'findings:perumusan' audit.pk %}" class="{% if audit.status == 'PERUMUSAN_TEMUAN' and penugasan_saya.ketua %}tombol-utama{% else %}tombol-kedua{% endif %}">Perumusan Temuan</a>
+      {% endif %}
+      {% if bisa_lihat_hasil %}
+        <a href="{% url 'findings:persetujuan' audit.pk %}" class="{% if audit.status == 'MENUNGGU_PERSETUJUAN' and penugasan_saya.peran == 'AUDITEE' %}tombol-utama{% else %}tombol-kedua{% endif %}">
+          {% if audit.status == "MENUNGGU_PERSETUJUAN" and penugasan_saya.peran == "AUDITEE" %}Tinjau dan setujui hasil{% else %}Hasil AMI{% endif %}
+        </a>
+      {% endif %}
+      <a href="{% url 'documents:daftar' audit.pk %}" class="tombol-kedua">{% include "_ikon.html" with n="dokumen" k="size-4" %}Dokumen</a>
+      {% if bisa_buka_kunci %}
+        <a href="{% url 'audits:ser_buka_kunci' audit.pk %}" class="tombol-kedua">Buka kunci / perpanjang SER</a>
+      {% endif %}
+      {% if perms.audits.view_audit %}
+        <form method="post" action="{% url 'ekspor:minta' %}">
+          {% csrf_token %}<input type="hidden" name="jenis" value="DATA_AUDIT"><input type="hidden" name="audit" value="{{ audit.pk }}">
+          <button type="submit" class="tombol-kedua">{% include "_ikon.html" with n="unduh" k="size-4" %}Ekspor data mentah</button>
+        </form>
+      {% endif %}
+      {% if perms.accounts.view_logaudit %}
+        <a href="{% url 'admin:accounts_logaudit_changelist' %}?audit_id={{ audit.pk }}" class="tombol-kedua">Log</a>
+      {% endif %}
+    </div>
+  </section>
 
   {% if verifikasi_lalu %}
-    <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border px-4 py-3 text-sm {% if verifikasi_lalu.belum_diverifikasi %}border-amber-300 bg-amber-50 text-amber-900{% else %}border-slate-200 bg-slate-50 text-slate-700{% endif %}">
+    <div class="flex flex-wrap items-center justify-between gap-3 {% if verifikasi_lalu.belum_diverifikasi %}kotak-peringatan{% else %}kotak-netral{% endif %}">
       <p>
         <strong>PTK periode lalu ({{ verifikasi_lalu.audit_lalu.periode }}):</strong>
         {{ verifikasi_lalu.total }} PTK · {{ verifikasi_lalu.efektif }} efektif · {{ verifikasi_lalu.belum_efektif }} belum efektif ·
@@ -78,7 +82,7 @@
   {% endif %}
 
   {% if audit.status == "PERLU_AUDIT_LAPANGAN" and adalah_ketua_atau_staf %}
-    <div class="mt-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="alert">
+    <div class="kotak-peringatan" role="alert">
       <p class="font-semibold">Perlu Audit Lapangan</p>
       <p>Deviasi antar-auditor melebihi ambang dan nilai efektif memenuhi KKM.
         {% if audit.periode.cp_lpm %}Hubungi CP LPM: <strong>{{ audit.periode.cp_lpm.get_full_name }}</strong> ({{ audit.periode.cp_lpm.email }}{% if audit.periode.cp_lpm.telepon %}, {{ audit.periode.cp_lpm.telepon }}{% endif %}).{% endif %}
@@ -87,15 +91,15 @@
   {% endif %}
 
   {% if hasil %}
-    <section class="mt-6 grid gap-4 md:grid-cols-2" aria-label="Hasil perhitungan">
+    <section class="grid gap-4 md:grid-cols-2" aria-label="Hasil perhitungan">
       {% for h in hasil %}
         <div class="kartu space-y-3">
           <h2 class="text-lg font-semibold text-slate-900">Hasil {{ h.obj.get_tahap_display|lower }}</h2>
           <dl class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-            <div class="rounded-md bg-slate-50 p-2"><dt class="text-slate-600">Rata-rata</dt><dd class="text-lg font-bold">{{ h.obj.rata_rata }}</dd></div>
-            <div class="rounded-md bg-slate-50 p-2"><dt class="text-slate-600">Deviasi (D)</dt><dd class="text-lg font-bold {% if h.obj.deviasi_tinggi %}text-amber-700{% endif %}">{{ h.obj.deviasi }}</dd></div>
-            <div class="rounded-md bg-slate-50 p-2"><dt class="text-slate-600">Nilai efektif</dt><dd class="text-lg font-bold">{{ h.obj.ne }}</dd></div>
-            <div class="rounded-md bg-slate-50 p-2"><dt class="text-slate-600">KKM</dt><dd class="font-semibold {% if h.obj.memenuhi_kkm %}text-green-700{% else %}text-red-700{% endif %}">{% if h.obj.memenuhi_kkm %}Memenuhi KKM{% else %}Belum Memenuhi KKM{% endif %}</dd></div>
+            <div class="rounded-lg bg-slate-50 p-3"><dt class="text-slate-600">Rata-rata</dt><dd class="text-lg font-bold">{{ h.obj.rata_rata }}</dd></div>
+            <div class="rounded-lg bg-slate-50 p-3"><dt class="text-slate-600">Deviasi (D)</dt><dd class="text-lg font-bold {% if h.obj.deviasi_tinggi %}text-amber-700{% endif %}">{{ h.obj.deviasi }}</dd></div>
+            <div class="rounded-lg bg-slate-50 p-3"><dt class="text-slate-600">Nilai efektif</dt><dd class="text-lg font-bold">{{ h.obj.ne }}</dd></div>
+            <div class="rounded-lg bg-slate-50 p-3"><dt class="text-slate-600">KKM</dt><dd class="font-semibold {% if h.obj.memenuhi_kkm %}text-green-700{% else %}text-red-700{% endif %}">{% if h.obj.memenuhi_kkm %}Memenuhi KKM{% else %}Belum Memenuhi KKM{% endif %}</dd></div>
           </dl>
           <ul class="text-sm">
             {% for orang, nilai in h.nilai %}<li class="flex justify-between py-0.5"><span>{{ orang }}</span><span class="font-medium">{{ nilai|default:"—" }}</span></li>{% endfor %}
@@ -110,7 +114,7 @@
   {% endif %}
 
   {% if penilaian_dimulai and tim_auditor %}
-    <section class="kartu mt-6" aria-labelledby="judul-progres">
+    <section class="kartu" aria-labelledby="judul-progres">
       <h2 id="judul-progres" class="text-lg font-semibold text-slate-900">Progres penilaian</h2>
       <ul class="mt-2 divide-y divide-slate-100 text-sm">
         {% for t in tim_auditor %}
@@ -128,14 +132,14 @@
     </section>
   {% endif %}
 
-  <div class="mt-6 grid gap-6 lg:grid-cols-3">
+  <div class="grid gap-6 lg:grid-cols-3">
     <section class="kartu lg:col-span-1" aria-labelledby="judul-tim">
       <h2 id="judul-tim" class="text-lg font-semibold text-slate-900">Tim audit</h2>
       <ul class="mt-3 divide-y divide-slate-100 text-sm">
         {% for p in tim %}
-          <li class="flex justify-between gap-3 py-2">
-            <span>{{ p.pengguna }}</span>
-            <span class="text-slate-600">{% if p.ketua %}Ketua auditor{% else %}{{ p.get_peran_display }}{% endif %}</span>
+          <li class="flex items-center justify-between gap-3 py-2">
+            <span class="flex items-center gap-2"><span class="flex size-7 items-center justify-center rounded-full {% if p.ketua %}bg-primer-700 text-white{% else %}bg-slate-100 text-slate-700{% endif %} text-xs font-semibold" aria-hidden="true">{{ p.pengguna|inisial }}</span>{{ p.pengguna }}</span>
+            <span class="lencana {% if p.ketua %}bg-primer-50 text-primer-700 ring-primer-600/20{% elif p.peran == 'AUDITEE' %}bg-green-50 text-green-700 ring-green-600/20{% else %}bg-slate-50 text-slate-600 ring-slate-500/20{% endif %}">{% if p.ketua %}Ketua auditor{% else %}{{ p.get_peran_display }}{% endif %}</span>
           </li>
         {% endfor %}
       </ul>
@@ -149,7 +153,7 @@
         <h3 class="mt-5 font-semibold text-slate-900">Riwayat</h3>
         <ol class="mt-2 space-y-2 text-sm">
           {% for r in riwayat %}
-            <li class="border-l-2 border-slate-200 pl-3">
+            <li class="border-l-2 border-primer-200 pl-3">
               <p class="text-slate-800">{% if r.dari == r.ke %}{{ r.get_ke_display }}{% else %}{{ r.get_dari_display }} → {{ r.get_ke_display }}{% endif %}</p>
               <p class="text-xs text-slate-500">{{ r.waktu|date:"j M Y H.i" }}{% if r.oleh %} · {{ r.oleh }}{% endif %}</p>
               {% if r.alasan %}<p class="text-xs text-slate-600">{{ r.alasan }}</p>{% endif %}
@@ -166,7 +170,7 @@
         <h3 class="mt-5 font-semibold text-slate-800">{{ kelompok.grouper.kode }} {{ kelompok.grouper.nama }}</h3>
         <ol class="mt-2 space-y-3">
           {% for p in kelompok.list %}
-            <li class="rounded-md border border-slate-200 p-3 text-sm">
+            <li class="rounded-lg border border-slate-200 p-3 text-sm">
               <p><span class="font-semibold">{{ p.kode }}</span> {{ p.pernyataan }}</p>
               {% if p.pertanyaan_panduan %}<p class="mt-1 text-slate-600">Pertanyaan panduan: {{ p.pertanyaan_panduan }}</p>{% endif %}
             </li>
@@ -176,5 +180,6 @@
         <p class="mt-3 text-sm text-slate-600">Tidak ada pernyataan standar yang berlaku.</p>
       {% endfor %}
     </section>
+  </div>
   </div>
 {% endblock content %}

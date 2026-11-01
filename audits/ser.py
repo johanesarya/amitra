@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from . import status
 from .sinyal import batas_ser_diperpanjang
-from .models import Audit, Bukti, JawabanSER
+from .models import Audit, Bukti, JawabanSER, Kategori
 
 DOMAIN_TAUTAN = frozenset({"drive.google.com", "docs.google.com"})
 UKURAN_BERKAS_MAKS = 20 * 1024 * 1024  # NFR-06
@@ -86,12 +86,14 @@ def _jawaban_berlaku(audit, pernyataan_id):
 
 
 @transaction.atomic
-def simpan_penjelasan(audit, pernyataan_id, penjelasan, versi, oleh):
-    """Simpan penjelasan bila versi masih sama; lempar KonflikVersi bila tidak (NFR-05)."""
+def simpan_isian(audit, pernyataan_id, penjelasan, versi, oleh, kategori=""):
+    """Simpan kategori dan penjelasan satu butir bila versi masih sama; lempar KonflikVersi bila tidak (NFR-05)."""
     _pastikan_terbuka(audit)
+    if kategori and kategori not in Kategori.values:
+        raise ValidationError("Kategori tidak dikenal.")
     jawaban = _jawaban_berlaku(audit, pernyataan_id)
     diubah = JawabanSER.objects.filter(pk=jawaban.pk, versi=versi).update(
-        penjelasan=penjelasan, versi=F("versi") + 1, diubah_oleh=oleh, diubah_pada=timezone.now()
+        kategori=kategori, penjelasan=penjelasan, versi=F("versi") + 1, diubah_oleh=oleh, diubah_pada=timezone.now()
     )
     jawaban.refresh_from_db()
     if not diubah:
@@ -163,7 +165,7 @@ def hapus_bukti(audit, bukti):
 class RingkasanSER:
     total: int
     lengkap: int
-    belum_lengkap: list  # [(pernyataan, ["penjelasan", "bukti"])]
+    belum_lengkap: list  # [(pernyataan, ["kategori", "penjelasan", "bukti"])]
 
     @property
     def siap_dikirim(self):
@@ -174,6 +176,8 @@ def ringkasan(audit):
     belum = []
     for p, j in butir_ser(audit):
         kurang = []
+        if j is None or not j.kategori:
+            kurang.append("kategori")
         if j is None or not j.penjelasan.strip():
             kurang.append("penjelasan")
         if j is None or not j.bukti.all():

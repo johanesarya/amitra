@@ -2,33 +2,117 @@
 
 @source "../../templates/**/*.html";
 @source "../../*/templates/**/*.html";
+@source "../../*/templatetags/*.py";
+
+/* Identitas SCU: ungu #4D1359 (utama), kuning #F1B800 (aksen saja; kontras rendah untuk teks). */
+@theme {
+  --font-sans: "Inter", "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-primer-50: #f5edf7;
+  --color-primer-100: #ecdcf0;
+  --color-primer-200: #d9b9e1;
+  --color-primer-300: #bf8fcb;
+  --color-primer-400: #9a5aab;
+  --color-primer-500: #7a3089;
+  --color-primer-600: #62206f;
+  --color-primer-700: #4d1359;
+  --color-primer-800: #3a0e43;
+  --color-primer-900: #2a0a31;
+  --color-aksen-50: #fef8e6;
+  --color-aksen-100: #fdeec0;
+  --color-aksen-400: #f1b800;
+  --color-aksen-500: #d9a500;
+}
 
 [x-cloak] {
   display: none !important;
 }
 
 @utility tombol {
-  @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors
     focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 @utility tombol-utama {
-  @apply tombol bg-blue-700 text-white hover:bg-blue-800 focus-visible:outline-blue-700;
+  @apply tombol bg-primer-700 text-white shadow-sm hover:bg-primer-800 focus-visible:outline-primer-700
+    disabled:hover:bg-primer-700;
 }
 
 @utility tombol-kedua {
   @apply tombol border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 focus-visible:outline-slate-500;
 }
 
+@utility tombol-lembut {
+  @apply tombol bg-primer-50 text-primer-800 hover:bg-primer-100 focus-visible:outline-primer-700;
+}
+
+@utility tombol-bahaya {
+  @apply tombol bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600;
+}
+
 @utility kartu {
-  @apply rounded-lg border border-slate-200 bg-white p-6 shadow-sm;
+  @apply rounded-xl border border-slate-200 bg-white p-6 shadow-sm;
 }
 
 @utility isian {
-  @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm
-    focus:border-blue-600 focus:outline-2 focus:outline-blue-600/30;
+  @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm
+    focus:border-primer-600 focus:outline-2 focus:outline-primer-600/25 disabled:bg-slate-50 disabled:text-slate-500;
 }
 
 @utility label {
   @apply mb-1 block text-sm font-medium text-slate-800;
+}
+
+@utility tautan {
+  @apply font-medium text-primer-700 underline-offset-4 hover:underline;
+}
+
+/* Label kecil berhuruf kapital di atas judul atau angka. */
+@utility judul-kecil {
+  @apply text-xs font-semibold tracking-wider text-slate-500 uppercase;
+}
+
+@utility lencana {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset;
+}
+
+@utility kotak-info {
+  @apply rounded-lg border border-primer-100 bg-primer-50 px-4 py-3 text-sm text-primer-900;
+}
+
+@utility kotak-peringatan {
+  @apply rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900;
+}
+
+@utility kotak-galat {
+  @apply rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800;
+}
+
+@utility kotak-sukses {
+  @apply rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800;
+}
+
+@utility kotak-netral {
+  @apply rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700;
+}
+
+@utility kepala-tabel {
+  @apply border-b border-slate-200 bg-slate-50 text-xs font-semibold tracking-wide text-slate-500 uppercase;
+}
+
+@utility nav-tautan {
+  @apply flex items-center gap-3 rounded-lg border-l-4 border-transparent px-3 py-2 text-sm font-medium text-slate-700
+    hover:bg-slate-50 hover:text-slate-900;
+}
+
+@utility nav-aktif {
+  @apply border-aksen-400 bg-primer-50 text-primer-800 hover:bg-primer-50;
+}
+
+/* Remah roti di topbar: pemisah otomatis sebelum setiap butir. */
+@utility remah {
+  @apply flex min-w-0 items-center gap-1.5;
+  &::before {
+    content: "›";
+    @apply text-slate-400;
+  }
 }

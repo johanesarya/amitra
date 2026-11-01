@@ -1,10 +1,20 @@
 {% extends "base.html" %}
+{% load siami %}
 
 {% block head_title %}Dokumen {{ audit.unit }}{% endblock head_title %}
+{% block remah %}
+  <li class="remah"><a href="{% url 'audits:detail' audit.pk %}" class="hover:text-slate-800">{{ audit.unit }}</a></li>
+  <li class="remah">Dokumen</li>
+{% endblock remah %}
 
 {% block content %}
-  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
-  <h1 class="mt-2 text-2xl font-bold text-slate-900">Dokumen</h1>
-  <p class="mt-1 text-sm text-slate-600">{{ audit.unit }} · {{ audit.periode }} · {{ audit.get_status_display }}</p>
+  <section class="kartu flex flex-wrap items-start justify-between gap-4">
+    <div class="space-y-1">
+      <span class="lencana {{ audit.status|kelas_status }}">{{ audit.get_status_display }}</span>
+      <h1 class="text-2xl font-bold text-slate-900">Dokumen</h1>
+      <p class="text-sm text-slate-600">{{ audit.unit }} · {{ audit.periode }} · {{ audit.get_status_display }}</p>
+    </div>
+    <p class="max-w-sm text-xs text-slate-500">PDF dan Excel dibuat di latar belakang lewat antrean; status pada halaman ini diperbarui otomatis.</p>
+  </section>
   {% include "documents/_daftar.html" %}
 {% endblock content %}

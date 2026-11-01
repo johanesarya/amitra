@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST
 
 from . import penilaian as layanan
 from .akses import ambil_audit
-from .models import Audit, HasilPerhitungan, Penilaian, Penugasan
+from .models import Audit, HasilPerhitungan, Penilaian, Penugasan, pilihan_kategori
 from .views_ser import _ptk_lalu, _waktu
 
 S = Audit.Status
@@ -91,7 +91,7 @@ def penilaian_halaman(request, pk):
             "berikutnya": daftar[indeks + 1][0] if indeks + 1 < len(daftar) else None,
             "bisa_ubah": bisa_ubah,
             "terbuka": terbuka,
-            "kategori_pilihan": [(v, label, ARTI_KATEGORI[v]) for v, label in Penilaian.Kategori.choices],
+            "kategori_pilihan": pilihan_kategori(),
             "penilaian_lain": penilaian_lain,
             "lihat_lain": lihat_lain,
             "ketua_bisa_tandai": penugasan.ketua and audit.status == S.PENILAIAN_AUDITOR,
@@ -101,15 +101,6 @@ def penilaian_halaman(request, pk):
             **_ptk_lalu(audit, b.pk, penugasan),
         },
     )
-
-
-# BRD 6.1
-ARTI_KATEGORI = {
-    "KTS": "Dokumen tidak tersedia dan belum terimplementasi",
-    "OB": "Dokumen belum lengkap, tetapi sudah terimplementasi",
-    "SESUAI": "Dokumen lengkap dan terimplementasi dengan baik",
-    "PELAMPAUAN": "Dokumen dan implementasi melampaui standar",
-}
 
 
 @require_POST
@@ -192,7 +183,26 @@ def perbedaan(request, pk):
     if not layanan.boleh_lihat_penilaian_lain(request.user, audit, penugasan):
         raise PermissionDenied("Penilaian auditor lain dapat dilihat setelah Anda mengunci penilaian.")
     auditor, baris = layanan.tabel_perbedaan(audit)
-    return render(request, "audits/penilaian/perbedaan.html", {"audit": audit, "auditor": auditor, "baris": baris})
+    berlaku = [r for r in baris if not r["tidak_berlaku"]]
+    ringkasan = {
+        "total": len(baris),
+        "sama": sum(not r["berbeda"] for r in berlaku),
+        "berbeda": sum(r["berbeda"] for r in berlaku),
+        "seri": sum(bool(r["final"]) and not r["final"].kategori for r in berlaku),
+        "tidak_berlaku": len(baris) - len(berlaku),
+    }
+    return render(
+        request,
+        "audits/penilaian/perbedaan.html",
+        {
+            "audit": audit,
+            "auditor": auditor,
+            "baris": baris,
+            "ringkasan": ringkasan,
+            "hasil": audit.hasil_tahap(HasilPerhitungan.Tahap.AWAL),
+            "adalah_ketua": penugasan is not None and penugasan.ketua,
+        },
+    )
 
 
 def _audit_ketua_atau_staf(request, pk):

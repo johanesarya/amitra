@@ -5,7 +5,7 @@
   <span x-show="status === 'menyimpan'" class="text-slate-500">Menyimpan…</span>
   <span x-show="status === 'gagal'" class="text-red-700" x-text="pesan"></span>
 </p>
-<div x-show="status === 'konflik'" x-cloak class="mt-2 space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alert">
+<div x-show="status === 'konflik'" x-cloak class="kotak-peringatan mt-2 space-y-2" role="alert">
   <p>Butir ini sudah diubah di tab atau perangkat lain pukul <span x-text="konflik.waktu"></span>. Isian Anda belum disimpan.</p>
   <div class="flex flex-wrap gap-2">
     <button type="button" class="tombol-kedua" @click="pakaiVersiServer()">Muat isian terbaru</button>

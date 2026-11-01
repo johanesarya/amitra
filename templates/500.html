@@ -1,20 +1,35 @@
 {% load static %}<!doctype html>
-<html lang="id">
+<html lang="id" class="h-full">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Terjadi gangguan · SI-AMI v2</title>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
-<body class="min-h-full bg-slate-50 text-slate-900 antialiased">
-  {% comment %}Tanpa base.html: halaman ini harus tetap tampil walau database atau konteks bermasalah.{% endcomment %}
-  <main class="mx-auto max-w-lg px-4 py-16">
-    <div class="kartu space-y-3">
-      <h1 class="text-xl font-bold">Terjadi gangguan pada sistem</h1>
-      <p class="text-sm text-slate-700">Isian SER dan penilaian yang sudah tersimpan tidak hilang. Silakan muat ulang halaman beberapa saat lagi.</p>
-      <p class="text-sm text-slate-600">Bila masalah berlanjut, hubungi Admin LPM.</p>
-      <a href="/" class="tombol-kedua">Kembali ke Tugas Saya</a>
+<body class="flex min-h-full flex-col bg-slate-50 text-slate-900 antialiased">
+  {% comment %}Tanpa base.html dan tanpa tag yang butuh database: halaman ini harus tetap tampil walau konteks bermasalah.{% endcomment %}
+  <header class="border-b border-slate-200 bg-white">
+    <div class="flex h-16 items-center gap-3 px-4 sm:px-6">
+      <img src="{% static 'img/logo-scu.svg' %}" alt="" class="h-8 w-auto">
+      <span class="text-lg font-bold text-primer-700">SI-AMI v2</span>
+      <span class="hidden text-sm text-slate-500 sm:inline">Lembaga Penjaminan Mutu SCU</span>
+    </div>
+  </header>
+  <main class="flex-1 px-4 py-16">
+    <div class="mx-auto max-w-2xl space-y-6 text-center">
+      <p class="mx-auto inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-1.5 text-sm font-medium text-red-700">HTTP 500 · Terjadi gangguan pada server</p>
+      <p class="text-7xl font-extrabold tracking-tight text-primer-700 sm:text-8xl">500</p>
+      <h1 class="text-2xl font-bold sm:text-3xl">Terjadi gangguan pada sistem</h1>
+      <p class="text-slate-600">Isian SER dan penilaian yang sudah tersimpan tidak hilang. Silakan muat ulang halaman beberapa saat lagi.</p>
+      <p class="text-sm text-slate-500">Bila masalah berlanjut, hubungi Admin LPM.</p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <a href="" class="tombol-utama">Muat ulang halaman</a>
+        <a href="/" class="tombol-kedua">Kembali ke Tugas Saya</a>
+      </div>
     </div>
   </main>
+  <footer class="border-t border-slate-200 bg-white px-4 py-4 text-center text-xs text-slate-500">
+    Lembaga Penjaminan Mutu (LPM) · Soegijapranata Catholic University
+  </footer>
 </body>
 </html>

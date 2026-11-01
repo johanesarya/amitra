@@ -1,24 +1,28 @@
 {% comment %}Ringkasan temuan untuk auditee dan dokumen (A. Kelebihan, B. KTS/OB, C. Peluang).{% endcomment %}
 <section class="kartu space-y-4" aria-labelledby="judul-ringkasan-temuan">
   <h2 id="judul-ringkasan-temuan" class="text-lg font-semibold text-slate-900">Temuan</h2>
-  <div>
-    <h3 class="font-semibold text-slate-800">A. Kelebihan</h3>
+  <div class="rounded-xl border border-blue-200 bg-blue-50/40 p-4">
+    <h3 class="flex items-center gap-2 font-semibold text-slate-800"><span class="flex size-6 items-center justify-center rounded-md bg-blue-600 text-xs font-bold text-white" aria-hidden="true">A</span>A. Kelebihan</h3>
     <ul class="mt-2 space-y-2 text-sm">
       {% for t in kelebihan %}<li><span class="font-medium">{{ t.pernyataan.kode }}</span> {{ t.uraian }}</li>{% empty %}<li class="text-slate-600">Tidak ada.</li>{% endfor %}
     </ul>
   </div>
-  <div>
-    <h3 class="font-semibold text-slate-800">B. KTS/OB</h3>
-    <ul class="mt-2 space-y-2 text-sm">
+  <div class="rounded-xl border border-red-200 bg-red-50/40 p-4">
+    <h3 class="flex items-center gap-2 font-semibold text-slate-800"><span class="flex size-6 items-center justify-center rounded-md bg-red-600 text-xs font-bold text-white" aria-hidden="true">B</span>B. KTS/OB</h3>
+    <ul class="mt-2 space-y-3 text-sm">
       {% for t in kts_ob %}
-        <li><span class="font-semibold">{% if t.ptk %}{{ t.ptk.kode }} · {% endif %}{{ t.get_jenis_display }}</span> · <span class="font-medium">{{ t.pernyataan.kode }}</span> {{ t.uraian }}</li>
+        <li class="rounded-lg border border-red-100 bg-white p-3">
+          <span class="lencana {% if t.jenis == 'KTS' %}bg-red-50 text-red-700 ring-red-600/20{% else %}bg-amber-50 text-amber-800 ring-amber-600/25{% endif %}">{{ t.get_jenis_display }}</span>
+          <span class="font-semibold">{% if t.ptk %}{{ t.ptk.kode }} · {% endif %}{{ t.get_jenis_display }}</span> · <span class="font-medium">{{ t.pernyataan.kode }}</span>
+          <p class="mt-1 text-slate-700">{{ t.uraian }}</p>
+        </li>
       {% empty %}
         <li class="text-slate-600">Tidak ada temuan KTS/OB.</li>
       {% endfor %}
     </ul>
   </div>
-  <div>
-    <h3 class="font-semibold text-slate-800">C. Peluang Peningkatan</h3>
+  <div class="rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+    <h3 class="flex items-center gap-2 font-semibold text-slate-800"><span class="flex size-6 items-center justify-center rounded-md bg-amber-500 text-xs font-bold text-white" aria-hidden="true">C</span>C. Peluang Peningkatan</h3>
     <ul class="mt-2 space-y-2 text-sm">
       {% for t in peluang %}<li class="whitespace-pre-line">{{ t.uraian }}</li>{% empty %}<li class="text-slate-600">Tidak ada.</li>{% endfor %}
     </ul>

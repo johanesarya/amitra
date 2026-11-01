@@ -2,8 +2,9 @@
   <thead>
     <tr>
       <th style="width: 6%">Kode</th>
-      <th style="width: 22%">Pernyataan standar</th>
-      <th style="width: 22%">Hasil/penjelasan auditee dan bukti</th>
+      <th style="width: 20%">Pernyataan standar</th>
+      <th style="width: 8%">Kategori auditee</th>
+      <th style="width: 20%">Hasil/penjelasan auditee dan bukti</th>
       {% for a in auditor %}<th>{{ a.pengguna }}{% if a.ketua %} (ketua){% endif %}</th>{% endfor %}
       <th style="width: 9%">Kategori final</th>
     </tr>
@@ -13,6 +14,7 @@
       <tr>
         <td>{{ r.butir.kode }}</td>
         <td>{{ r.butir.pernyataan }}</td>
+        <td>{% if r.auditee.label %}{{ r.auditee.label }}{% if r.auditee.skor %} ({{ r.auditee.skor }}){% endif %}{% else %}—{% endif %}</td>
         <td>
           <div class="pre">{{ r.jawaban.penjelasan|default:"—" }}</div>
           {% for b in r.jawaban.bukti.all %}<div class="kecil">• {{ b.nama }}</div>{% endfor %}
@@ -30,7 +32,7 @@
       </tr>
     {% endfor %}
     <tr>
-      <th colspan="3" style="text-align: right">Nilai per auditor (N)</th>
+      <th colspan="4" style="text-align: right">Nilai per auditor (N)</th>
       {% for orang, n in nilai_auditor %}<th>{{ n|default:"—" }}</th>{% endfor %}
       <th></th>
     </tr>

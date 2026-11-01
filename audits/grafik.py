@@ -9,7 +9,7 @@ from html import escape
 from django.utils.safestring import mark_safe
 
 WARNA = {"KTS": "#b91c1c", "OB": "#d97706", "SESUAI": "#15803d", "PELAMPAUAN": "#1d4ed8"}
-WARNA_GARIS = "#1d4ed8"
+WARNA_GARIS = "#4d1359"  # ungu SCU
 
 
 def _warna_skor(nilai, skor_sesuai):

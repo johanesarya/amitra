@@ -73,7 +73,7 @@ def baru(lama, periode, prodi, lingkup, auditor, admin_lpm, pimpinan_baru):
     a = simpan_audit(periode=p2, unit=prodi, lingkup=[lingkup], auditee=pimpinan_baru, auditor=auditor[2:5], ketua=auditor[2], oleh=admin_lpm)
     ser.pastikan_jawaban(a)
     for b in a.pernyataan_berlaku():
-        ser.simpan_penjelasan(a, b.pk, "Penjelasan baru", a.jawaban_ser.get(pernyataan=b).versi, pimpinan_baru)
+        ser.simpan_isian(a, b.pk, "Penjelasan baru", a.jawaban_ser.get(pernyataan=b).versi, pimpinan_baru, kategori="SESUAI")
         ser.tambah_tautan(segarkan(a), b.pk, TAUTAN, pimpinan_baru)
     ser.kirim(segarkan(a), pimpinan_baru)
     return segarkan(a)

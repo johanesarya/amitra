@@ -1,30 +1,48 @@
 {% extends "base.html" %}
+{% load siami %}
 
 {% block head_title %}Perumusan Temuan {{ audit.unit }}{% endblock head_title %}
 
+{% block remah %}
+  <li class="remah"><a href="{% url 'audits:detail' audit.pk %}" class="hover:text-slate-800">{{ audit.unit }}</a></li>
+  <li class="remah">Perumusan Temuan</li>
+{% endblock remah %}
+
 {% block content %}
-  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
-  <div class="mt-2 flex flex-wrap items-end justify-between gap-4">
-    <div>
+  <div class="space-y-6">
+  {% stepper audit %}
+
+  <section class="kartu flex flex-wrap items-start justify-between gap-4">
+    <div class="space-y-1">
+      <span class="lencana {{ audit.status|kelas_status }}">{{ audit.get_status_display }}</span>
       <h1 class="text-2xl font-bold text-slate-900">Perumusan Temuan</h1>
-      <p class="mt-1 text-sm text-slate-600">{{ audit.unit }} · {{ audit.periode }} · {{ audit.get_status_display }}</p>
+      <p class="text-sm text-slate-600">{{ audit.unit }} · {{ audit.periode }} · {{ audit.get_status_display }}</p>
     </div>
-    <a href="{% url 'audits:perbedaan' audit.pk %}" class="tombol-kedua">Tabel perbedaan</a>
-  </div>
+    <a href="{% url 'audits:perbedaan' audit.pk %}" class="tombol-kedua">{% include "_ikon.html" with n="timbangan" k="size-4" %}Tabel perbedaan</a>
+  </section>
+
+  <nav aria-label="Bagian perumusan" class="flex gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1.5 text-sm whitespace-nowrap shadow-sm">
+    <a href="#kategori" class="rounded-lg px-3 py-1.5 font-medium text-slate-700 hover:bg-primer-50 hover:text-primer-800">1. Kategori final</a>
+    <a href="#judul-temuan" class="rounded-lg px-3 py-1.5 font-medium text-slate-700 hover:bg-primer-50 hover:text-primer-800">2. Temuan</a>
+    <a href="#usulan" class="rounded-lg px-3 py-1.5 font-medium text-slate-700 hover:bg-primer-50 hover:text-primer-800">3. Usulan anggota</a>
+    <a href="#kesimpulan" class="rounded-lg px-3 py-1.5 font-medium text-slate-700 hover:bg-primer-50 hover:text-primer-800">4. Kesimpulan</a>
+    {% if bisa_ubah %}<a href="#checklist" class="rounded-lg px-3 py-1.5 font-medium text-slate-700 hover:bg-primer-50 hover:text-primer-800">5. Teruskan</a>{% endif %}
+  </nav>
+
   {% if not bisa_ubah %}
-    <p class="mt-4 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" role="status">
+    <p class="kotak-netral" role="status">
       {% if bisa_usul %}Anda dapat mengirim usulan; ketua auditor yang memutuskan.{% elif audit.status != "PERUMUSAN_TEMUAN" %}Perumusan sudah diteruskan kepada auditee.{% else %}Hanya-baca.{% endif %}
     </p>
   {% endif %}
 
   {% if riwayat_keberatan %}
-    <section id="keberatan" class="kartu mt-6 space-y-3 border-amber-300" aria-labelledby="judul-keberatan">
+    <section id="keberatan" class="kartu space-y-3 border-amber-300 bg-amber-50/40" aria-labelledby="judul-keberatan">
       <h2 id="judul-keberatan" class="text-lg font-semibold text-slate-900">Keberatan auditee</h2>
       {% for p in riwayat_keberatan %}
         <p class="whitespace-pre-line text-sm text-slate-800">{{ p.keberatan }}</p>
         <p class="text-xs text-slate-500">{{ p.oleh }} · {{ p.waktu|date:"j M Y H.i" }}</p>
         {% if p.tanggapan %}
-          <p class="rounded-md bg-slate-50 p-3 text-sm"><span class="font-medium">Tanggapan ketua:</span> {{ p.tanggapan }}</p>
+          <p class="rounded-lg bg-white p-3 text-sm"><span class="font-medium">Tanggapan ketua:</span> {{ p.tanggapan }}</p>
         {% endif %}
       {% endfor %}
       {% if keberatan and bisa_ubah %}
@@ -39,23 +57,24 @@
     </section>
   {% endif %}
 
-  <section id="kategori" class="kartu mt-6 overflow-x-auto" aria-labelledby="judul-kategori">
+  <section id="kategori" class="kartu overflow-x-auto" aria-labelledby="judul-kategori">
+    <p class="judul-kecil">Bagian 1</p>
     <h2 id="judul-kategori" class="text-lg font-semibold text-slate-900">Kategori final per butir</h2>
     <p class="mt-1 text-sm text-slate-600">Hasil rekonsiliasi. Ketua dapat mengubahnya setelah diskusi tim dengan alasan tertulis (FR-32).</p>
     <table class="mt-3 w-full min-w-[760px] text-left text-sm">
-      <thead class="border-b border-slate-200 text-slate-700">
+      <thead class="kepala-tabel">
         <tr>
-          <th scope="col" class="py-2 pr-3 font-semibold">Butir</th>
-          {% for a in auditor %}<th scope="col" class="px-2 py-2 font-semibold">{{ a.pengguna.get_short_name }}</th>{% endfor %}
-          <th scope="col" class="py-2 pl-3 font-semibold">Kategori final</th>
+          <th scope="col" class="px-3 py-3">Butir</th>
+          {% for a in auditor %}<th scope="col" class="px-2 py-3">{{ a.pengguna.get_short_name }}{% if a.ketua %} (ketua){% endif %}</th>{% endfor %}
+          <th scope="col" class="px-3 py-3">Kategori final</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-100">
         {% for r in baris %}
           <tr class="align-top {% if r.berbeda %}bg-amber-50{% endif %}">
-            <th scope="row" class="py-2 pr-3 font-normal"><span class="font-semibold">{{ r.butir.kode }}</span> {{ r.butir.pernyataan|truncatechars:70 }}</th>
-            {% for a, p in r.penilaian %}<td class="px-2 py-2">{{ p.kategori|default:"—" }}</td>{% endfor %}
-            <td class="py-2 pl-3">
+            <th scope="row" class="px-3 py-3 font-normal"><span class="font-semibold">{{ r.butir.kode }}</span> {{ r.butir.pernyataan|truncatechars:70 }}</th>
+            {% for a, p in r.penilaian %}<td class="px-2 py-3">{% if p.kategori %}<span class="lencana {{ p.kategori|kelas_kategori }}">{{ p.get_kategori_display|cut:" (Ketidaksesuaian)"|cut:" (Observasi)" }}</span>{% else %}—{% endif %}</td>{% endfor %}
+            <td class="px-3 py-3">
               {% if bisa_ubah %}
                 <form method="post" class="flex flex-wrap items-center gap-2" x-data="{ awal: '{{ r.final.kategori }}', pilih: '{{ r.final.kategori }}' }">
                   {% csrf_token %}
@@ -68,7 +87,7 @@
                   <button type="submit" class="tombol-kedua px-3 py-1.5" x-show="pilih !== awal" x-cloak>Simpan</button>
                 </form>
               {% else %}
-                {{ r.final.get_kategori_display|default:"—" }}
+                {% if r.final.kategori %}<span class="lencana {{ r.final.kategori|kelas_kategori }}">{{ r.final.get_kategori_display }}</span>{% else %}—{% endif %}
               {% endif %}
               {% if r.final.cara == "KETUA" and r.final.alasan %}<p class="mt-1 text-xs text-slate-500">Ditetapkan ketua: {{ r.final.alasan }}</p>{% endif %}
             </td>
@@ -78,18 +97,18 @@
     </table>
   </section>
 
-  <section class="mt-6 space-y-4" aria-labelledby="judul-temuan">
-    <h2 id="judul-temuan" class="text-lg font-semibold text-slate-900">Temuan</h2>
+  <section class="kartu space-y-5" aria-labelledby="judul-temuan">
+    <div><p class="judul-kecil">Bagian 2</p><h2 id="judul-temuan" class="text-lg font-semibold text-slate-900">Temuan</h2></div>
 
-    <h3 class="font-semibold text-slate-800">A. Kelebihan</h3>
+    <h3 class="flex items-center gap-2 font-semibold text-slate-800"><span class="flex size-7 items-center justify-center rounded-lg bg-blue-600 text-xs font-bold text-white" aria-hidden="true">A</span>A. Kelebihan</h3>
     {% for t in kelebihan %}{% include "findings/_temuan_isian.html" %}{% empty %}<p class="text-sm text-slate-600">Tidak ada temuan Kelebihan.</p>{% endfor %}
 
-    <h3 class="pt-2 font-semibold text-slate-800">B. KTS/OB</h3>
+    <h3 class="flex items-center gap-2 pt-2 font-semibold text-slate-800"><span class="flex size-7 items-center justify-center rounded-lg bg-red-600 text-xs font-bold text-white" aria-hidden="true">B</span>B. KTS/OB <span class="text-sm font-normal text-slate-500">(wajib PTK)</span></h3>
     {% for t in kts_ob %}{% include "findings/_temuan_isian.html" %}{% empty %}<p class="text-sm text-slate-600">Tidak ada temuan KTS/OB. Dokumen PTK tidak dibuat.</p>{% endfor %}
 
-    <h3 id="peluang" class="pt-2 font-semibold text-slate-800">C. Peluang Peningkatan</h3>
+    <h3 id="peluang" class="flex items-center gap-2 pt-2 font-semibold text-slate-800"><span class="flex size-7 items-center justify-center rounded-lg bg-amber-500 text-xs font-bold text-white" aria-hidden="true">C</span>C. Peluang Peningkatan</h3>
     {% for t in peluang %}
-      <div class="kartu space-y-2 p-4">
+      <div class="space-y-2 rounded-xl border border-amber-200 bg-amber-50/50 p-4">
         <p class="whitespace-pre-line text-sm text-slate-800">{{ t.uraian }}</p>
         {% if bisa_ubah %}
           <form method="post">{% csrf_token %}<input type="hidden" name="aksi" value="peluang_hapus"><input type="hidden" name="temuan" value="{{ t.pk }}">
@@ -100,14 +119,14 @@
       <p class="text-sm text-slate-600">Belum ada Peluang Peningkatan.</p>
     {% endfor %}
     {% if bisa_ubah %}
-      <form method="post" class="kartu space-y-2 p-4">
+      <form method="post" class="space-y-2 rounded-xl border border-dashed border-slate-300 p-4">
         {% csrf_token %}
         <input type="hidden" name="aksi" value="peluang_tambah">
         <label class="block"><span class="label">Tambah Peluang Peningkatan</span><textarea name="uraian" rows="2" required class="isian"></textarea></label>
         <button type="submit" class="tombol-kedua">Tambah</button>
       </form>
     {% elif bisa_usul %}
-      <form method="post" class="kartu space-y-2 p-4">
+      <form method="post" class="space-y-2 rounded-xl border border-dashed border-slate-300 p-4">
         {% csrf_token %}
         <input type="hidden" name="aksi" value="usulan"><input type="hidden" name="jenis" value="PELUANG">
         <label class="block"><span class="label">Usulkan Peluang Peningkatan</span><textarea name="isi" rows="2" required class="isian"></textarea></label>
@@ -116,11 +135,12 @@
     {% endif %}
   </section>
 
-  <section id="usulan" class="kartu mt-6" aria-labelledby="judul-usulan">
+  <section id="usulan" class="kartu" aria-labelledby="judul-usulan">
+    <p class="judul-kecil">Bagian 3</p>
     <h2 id="judul-usulan" class="text-lg font-semibold text-slate-900">Usulan anggota auditor</h2>
-    <ul class="mt-3 divide-y divide-slate-100 text-sm">
+    <ul class="mt-3 grid gap-3 text-sm md:grid-cols-2">
       {% for u in usulan %}
-        <li class="flex flex-wrap items-start justify-between gap-3 py-2">
+        <li class="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 p-4">
           <div>
             <p><span class="font-medium">{{ u.oleh }}</span> · {{ u.get_jenis_display }}{% if u.temuan %} {{ u.temuan.pernyataan.kode }}{% endif %} · <span class="text-slate-500">{{ u.get_status_display }}</span></p>
             <p class="whitespace-pre-line text-slate-700">{{ u.isi }}</p>
@@ -128,7 +148,7 @@
           {% if bisa_ubah and u.status == "DIAJUKAN" %}
             <form method="post" class="flex gap-2">
               {% csrf_token %}<input type="hidden" name="usulan" value="{{ u.pk }}">
-              <button type="submit" name="aksi" value="usulan_terima" class="tombol-kedua px-3 py-1.5">Terima</button>
+              <button type="submit" name="aksi" value="usulan_terima" class="tombol-utama px-3 py-1.5">Terima</button>
               <button type="submit" name="aksi" value="usulan_tolak" class="tombol-kedua px-3 py-1.5">Tolak</button>
             </form>
           {% endif %}
@@ -139,9 +159,10 @@
     </ul>
   </section>
 
-  <section id="kesimpulan" class="kartu mt-6 space-y-4" aria-labelledby="judul-kesimpulan">
+  <section id="kesimpulan" class="kartu space-y-4" aria-labelledby="judul-kesimpulan">
+    <p class="judul-kecil">Bagian 4</p>
     <h2 id="judul-kesimpulan" class="text-lg font-semibold text-slate-900">Kesimpulan dan Tujuan Audit</h2>
-    <p class="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+    <p class="kotak-info">
       Bahan Kesimpulan C:
       {% if verifikasi_lalu.total %}
         {{ verifikasi_lalu.efektif }} dari {{ verifikasi_lalu.total }} PTK periode lalu efektif,
@@ -158,7 +179,7 @@
         {% include "findings/_kesimpulan_isian.html" with huruf="a" judul="A. Sistem dokumentasi" skor=kesimpulan.skor_a penjelasan=kesimpulan.penjelasan_a opsi=opsi_kesimpulan %}
         {% include "findings/_kesimpulan_isian.html" with huruf="b" judul="B. Implementasi SPMI" skor=kesimpulan.skor_b penjelasan=kesimpulan.penjelasan_b opsi=opsi_kesimpulan %}
         {% comment %}C ditulis terpisah karena punya pilihan "tidak berlaku".{% endcomment %}
-        <fieldset class="space-y-2 rounded-md border border-slate-200 p-3">
+        <fieldset class="space-y-2 rounded-xl border border-slate-200 p-4">
           <legend class="px-1 font-semibold text-slate-900">C. Tindak lanjut PTK periode lalu</legend>
           <label class="flex items-start gap-2 text-sm">
             <input type="checkbox" name="c_tidak_berlaku" value="1" x-model="cTb" class="mt-0.5 size-4" {% if not bisa_ubah %}disabled{% endif %}>
@@ -179,9 +200,9 @@
       </div>
       <fieldset>
         <legend class="label">Tujuan Audit yang tercapai</legend>
-        <div class="space-y-1">
+        <div class="grid gap-2 md:grid-cols-2">
           {% for t in tujuan %}
-            <label class="flex items-start gap-2 text-sm">
+            <label class="flex items-start gap-2 rounded-lg border border-slate-200 p-3 text-sm has-[:checked]:border-green-300 has-[:checked]:bg-green-50">
               <input type="checkbox" name="tujuan" value="{{ t.pk }}" class="mt-0.5 size-4" {% if kesimpulan and t in kesimpulan.tujuan_tercapai.all %}checked{% endif %} {% if not bisa_ubah %}disabled{% endif %}>
               <span><span class="font-medium">{{ t.kode }}.</span> {{ t.teks }}</span>
             </label>
@@ -190,15 +211,16 @@
           {% endfor %}
         </div>
       </fieldset>
-      {% if bisa_ubah %}<button type="submit" class="tombol-kedua">Simpan kesimpulan</button>{% endif %}
+      {% if bisa_ubah %}<button type="submit" class="tombol-utama">Simpan kesimpulan</button>{% endif %}
     </form>
   </section>
 
   {% if bisa_ubah %}
-    <section id="checklist" class="kartu mt-6 space-y-4" aria-labelledby="judul-checklist">
+    <section id="checklist" class="kartu space-y-4 border-primer-200" aria-labelledby="judul-checklist">
+      <p class="judul-kecil">Bagian 5</p>
       <h2 id="judul-checklist" class="text-lg font-semibold text-slate-900">Checklist persetujuan ketua</h2>
       {% if syarat %}
-        <div class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="status">
+        <div class="kotak-peringatan" role="status">
           <p class="font-semibold">Belum dapat diteruskan:</p>
           <ul class="mt-1 list-disc pl-5">{% for s in syarat %}<li>{{ s }}</li>{% endfor %}</ul>
         </div>
@@ -207,11 +229,12 @@
         {% csrf_token %}
         <input type="hidden" name="aksi" value="ajukan">
         {% for kunci, label in checklist %}
-          <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="checklist" value="{{ kunci }}" required class="mt-0.5 size-4"> <span>{{ label }}</span></label>
+          <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm has-[:checked]:border-primer-300 has-[:checked]:bg-primer-50"><input type="checkbox" name="checklist" value="{{ kunci }}" required class="mt-0.5 size-4 accent-primer-700"> <span>{{ label }}</span></label>
         {% endfor %}
         <p class="text-sm text-slate-600">Sistem akan menghitung NE final, NK, dan hasil akhir, menetapkan kode PTK, lalu meneruskan hasil kepada auditee.</p>
-        <button type="submit" class="tombol-utama" {% if syarat %}disabled{% endif %}>Teruskan kepada auditee</button>
+        <div class="flex justify-end"><button type="submit" class="tombol-utama" {% if syarat %}disabled{% endif %}>Teruskan kepada auditee {% include "_ikon.html" with n="kanan" k="size-4" %}</button></div>
       </form>
     </section>
   {% endif %}
+  </div>
 {% endblock content %}

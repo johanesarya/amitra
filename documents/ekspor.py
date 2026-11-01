@@ -128,7 +128,7 @@ def _data_mentah(audits, judul):
     wb = Workbook()
     ws_ser = wb.active
     ws_ser.title = "SER"
-    _judul(ws_ser, judul, ["Unit", "Butir", "Pernyataan", "Hasil/penjelasan", "Bukti"])
+    _judul(ws_ser, judul, ["Unit", "Butir", "Pernyataan", "Kategori auditee", "Hasil/penjelasan", "Bukti"])
     ws_nilai = wb.create_sheet("Penilaian")
     _judul(ws_nilai, "Penilaian auditor", ["Unit", "Butir", "Auditor", "Kategori", "Skor", "Dasar penilaian", "Kondisi faktual"])
     ws_final = wb.create_sheet("Kategori final")
@@ -147,7 +147,7 @@ def _data_mentah(audits, judul):
             params_cache[a.periode_id] = a.periode.parameter()
         params = params_cache[a.periode_id]
         for j in sorted(a.jawaban_ser.all(), key=lambda j: j.pernyataan.kode):
-            tulis_baris(ws_ser, [unit, j.pernyataan.kode, j.pernyataan.pernyataan, j.penjelasan,
+            tulis_baris(ws_ser, [unit, j.pernyataan.kode, j.pernyataan.pernyataan, j.get_kategori_display(), j.penjelasan,
                                  "\n".join(b.url or b.nama for b in j.bukti.all())])
         for p in sorted(a.penilaian.all(), key=lambda p: (p.pernyataan.kode, p.auditor.nama)):
             tulis_baris(ws_nilai, [unit, p.pernyataan.kode, str(p.auditor), p.get_kategori_display(),

@@ -38,6 +38,8 @@ PASSWORD = "demo-siami-2026"
 DOMAIN = "demo.local"
 TAUTAN = "https://drive.google.com/file/d/contoh-bukti/view"
 SKOR = {1: "KTS", 2: "OB", 3: "SESUAI", 4: "PELAMPAUAN"}
+# Evaluasi diri auditee per butir (berulang), biasanya sedikit lebih tinggi dari penilaian auditor.
+KATEGORI_AUDITEE = ["SESUAI", "SESUAI", "PELAMPAUAN", "SESUAI", "OB"]
 URAIAN = {
     "KELEBIHAN": "Pelaksanaan butir {kode} melampaui standar: dokumen lengkap, dievaluasi rutin, dan hasilnya dipublikasikan.",
     "KTS": "Dokumen pendukung butir {kode} tidak tersedia dan pelaksanaannya belum dapat dibuktikan.",
@@ -129,7 +131,10 @@ class Command(BaseCommand):
             if jumlah is not None and i >= jumlah:
                 break
             j = audit.jawaban_ser.get(pernyataan=b)
-            ser.simpan_penjelasan(audit, b.pk, f"Pelaksanaan butir {b.kode} dijelaskan pada dokumen bukti terlampir beserta notulen rapat unit.", j.versi, auditee)
+            ser.simpan_isian(
+                audit, b.pk, f"Pelaksanaan butir {b.kode} dijelaskan pada dokumen bukti terlampir beserta notulen rapat unit.",
+                j.versi, auditee, kategori=KATEGORI_AUDITEE[i % len(KATEGORI_AUDITEE)],
+            )
             ser.tambah_tautan(audit, b.pk, TAUTAN, auditee, nama=f"Bukti butir {b.kode}")
         if kirim:
             ser.kirim(Audit.objects.get(pk=audit.pk), auditee)

@@ -40,3 +40,43 @@ def ubah_status(audit, ke, oleh, alasan=""):
 def catat(audit, oleh, alasan):
     """Catat tindakan tanpa perpindahan status (mis. perpanjangan batas SER)."""
     return RiwayatStatus.objects.create(audit=audit, dari=audit.status, ke=audit.status, oleh=oleh, alasan=alasan)
+
+
+# --- Stepper progres (NFR-20) ----------------------------------------------------------------
+# Enam langkah yang dilihat pengguna; beberapa status berbagi satu langkah.
+LANGKAH = [
+    ("Persiapan", {S.BELUM_MULAI}),
+    ("SER", {S.PENGISIAN_SER}),
+    ("Penilaian", {S.PENILAIAN_AUDITOR, S.REKONSILIASI, S.PERLU_AUDIT_LAPANGAN}),
+    ("Temuan", {S.PERUMUSAN_TEMUAN}),
+    ("Persetujuan", {S.MENUNGGU_PERSETUJUAN}),
+    ("Selesai", {S.FINAL, S.TINDAK_LANJUT_PTK, S.DITUTUP}),
+]
+
+LANGKAH_BERIKUTNYA = {
+    S.BELUM_MULAI: "Audit sudah diplot. Auditee mulai mengisi SER: kategori evaluasi diri, penjelasan, dan bukti per butir.",
+    S.PENGISIAN_SER: "Auditee melengkapi semua butir SER, lalu menekan Tinjau dan kirim SER sebelum batas pengisian.",
+    S.PENILAIAN_AUDITOR: "Setiap auditor menilai semua butir secara mandiri berdasarkan bukti, lalu mengunci penilaiannya.",
+    S.REKONSILIASI: "Ketua auditor menetapkan kategori final untuk butir tanpa kategori terbanyak.",
+    S.PERLU_AUDIT_LAPANGAN: "Ketua auditor melaksanakan Audit Lapangan, membuka revisi butir bila perlu, lalu menyelesaikannya.",
+    S.PERUMUSAN_TEMUAN: "Ketua auditor merumuskan temuan dan kesimpulan A/B/C, lalu meneruskan hasil kepada auditee.",
+    S.MENUNGGU_PERSETUJUAN: "Auditee meninjau hasil AMI, lalu menyetujui atau mengajukan keberatan (satu kali).",
+    S.FINAL: "Auditee mengisi rencana PTK untuk setiap temuan KTS/OB, lalu mengirim rencana.",
+    S.TINDAK_LANJUT_PTK: "Auditee mencatat realisasi dan bukti PTK; efektivitasnya diverifikasi pada siklus berikutnya.",
+    S.DITUTUP: "Siklus audit ini sudah ditutup.",
+}
+
+
+def stepper(audit):
+    """Langkah stepper untuk satu audit: [{nomor, label, keadaan}] dengan keadaan selesai/aktif/menunggu."""
+    aktif = next(i for i, (_, isi) in enumerate(LANGKAH) if audit.status in isi)
+    hasil = []
+    for i, (label, _) in enumerate(LANGKAH):
+        if i < aktif or audit.status == S.DITUTUP:
+            keadaan = "selesai"
+        elif i == aktif:
+            keadaan = "aktif"
+        else:
+            keadaan = "menunggu"
+        hasil.append({"nomor": i + 1, "label": label, "keadaan": keadaan})
+    return hasil

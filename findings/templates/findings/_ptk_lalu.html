@@ -1,9 +1,9 @@
 {% comment %}FR-21, BR-17: temuan KTS/OB periode lalu pada butir yang sama. Parameter: ptk_lalu, audit, bisa_verifikasi.{% endcomment %}
 {% if ptk_lalu %}
-  <div class="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
-    <p class="font-semibold">Temuan periode lalu pada butir ini</p>
+  <div class="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-950">
+    <p class="flex items-center gap-2 text-base font-semibold">{% include "_ikon.html" with n="riwayat" %}Temuan periode lalu pada butir ini</p>
     {% for p in ptk_lalu %}
-      <div class="border-t border-amber-200 pt-2 first:border-0 first:pt-0">
+      <div class="rounded-lg border border-amber-200 bg-white/70 p-3">
         <p><span class="font-medium">{{ p.kode }} · {{ p.temuan.get_jenis_display }}</span> ({{ p.audit.periode }}) —
           <span class="{% if p.status == 'EFEKTIF' %}text-green-800{% elif p.status == 'TIDAK_EFEKTIF' %}font-semibold text-red-800{% else %}font-semibold{% endif %}">
             {% if p.sudah_diverifikasi %}{{ p.get_status_display }}{% else %}belum diverifikasi efektif{% endif %}
@@ -14,7 +14,7 @@
         {% if p.realisasi %}<p class="text-xs"><span class="font-medium">Realisasi:</span> {{ p.realisasi|truncatechars:200 }}</p>{% endif %}
       </div>
     {% endfor %}
-    <a href="{% url 'findings:verifikasi' audit.pk %}" class="inline-block text-xs font-medium underline">
+    <a href="{% url 'findings:verifikasi' audit.pk %}" class="inline-block text-xs font-semibold underline underline-offset-4">
       {% if bisa_verifikasi %}Verifikasi PTK periode lalu{% else %}Lihat rincian PTK periode lalu{% endif %}
     </a>
   </div>

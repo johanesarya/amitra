@@ -168,13 +168,38 @@ def lokasi_bukti(instance, filename):
     return f"{folder}/{audit_id}/{uuid.uuid4().hex}{Path(filename).suffix.lower()}"
 
 
+class Kategori(models.TextChoices):
+    """Skala 1–4 (BRD 6.1), dipakai auditee dan auditor. Nilai sama dengan scoring.parameter.Kategori."""
+
+    KTS = "KTS", "KTS (Ketidaksesuaian)"
+    OB = "OB", "OB (Observasi)"
+    SESUAI = "SESUAI", "Sesuai"
+    PELAMPAUAN = "PELAMPAUAN", "Pelampauan"
+
+
+# BRD 6.1
+ARTI_KATEGORI = {
+    "KTS": "Dokumen tidak tersedia dan belum terimplementasi",
+    "OB": "Dokumen belum lengkap, tetapi sudah terimplementasi",
+    "SESUAI": "Dokumen lengkap dan terimplementasi dengan baik",
+    "PELAMPAUAN": "Dokumen dan implementasi melampaui standar",
+}
+
+
+def pilihan_kategori():
+    """[(nilai, label, arti)] untuk kartu pilihan kategori di SER dan penilaian."""
+    return [(v, label, ARTI_KATEGORI[v]) for v, label in Kategori.choices]
+
+
 class JawabanSER(models.Model):
-    """Isian auditee per butir (FR-19). Tanpa skor (BR-01)."""
+    """Isian auditee per butir (FR-19): kategori evaluasi diri, penjelasan, bukti (BR-01)."""
 
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE, related_name="jawaban_ser", verbose_name="audit")
     pernyataan = models.ForeignKey(
         PernyataanStandar, on_delete=models.PROTECT, related_name="+", verbose_name="pernyataan standar"
     )
+    # Revisi 31 Okt 2026: auditee memilih kategori; tidak masuk rumus Bab 6, hanya pembanding bagi auditor.
+    kategori = models.CharField("kategori evaluasi diri", max_length=12, choices=Kategori.choices, blank=True)
     penjelasan = models.TextField("hasil/penjelasan", blank=True)
     # Optimistic locking (NFR-05): setiap simpan menaikkan versi.
     versi = models.PositiveIntegerField("versi", default=1)
@@ -196,8 +221,8 @@ class JawabanSER(models.Model):
 
     @property
     def lengkap(self):
-        """FR-22: penjelasan dan minimal satu bukti wajib (keputusan 31 Okt 2026)."""
-        return bool(self.penjelasan.strip()) and len(self.bukti.all()) > 0
+        """FR-22: kategori, penjelasan, dan minimal satu bukti wajib (keputusan 31 Okt 2026)."""
+        return bool(self.kategori) and bool(self.penjelasan.strip()) and len(self.bukti.all()) > 0
 
 
 class Bukti(models.Model):
@@ -277,12 +302,7 @@ class RiwayatStatus(models.Model):
 class Penilaian(models.Model):
     """Penilaian satu auditor untuk satu butir (FR-26). Skor angka diambil dari skala Pengaturan."""
 
-    class Kategori(models.TextChoices):
-        # Nilai sama dengan scoring.parameter.Kategori.
-        KTS = "KTS", "KTS (Ketidaksesuaian)"
-        OB = "OB", "OB (Observasi)"
-        SESUAI = "SESUAI", "Sesuai"
-        PELAMPAUAN = "PELAMPAUAN", "Pelampauan"
+    Kategori = Kategori
 
     PERLU_KONDISI_FAKTUAL = frozenset({Kategori.KTS, Kategori.OB})
 

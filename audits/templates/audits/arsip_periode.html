@@ -2,6 +2,8 @@
 
 {% block head_title %}Arsipkan periode{% endblock head_title %}
 
+{% block remah %}<li class="remah">Arsipkan periode</li>{% endblock remah %}
+
 {% block content %}
   <div class="kartu mx-auto max-w-lg space-y-4">
     <h1 class="text-xl font-bold text-slate-900">Arsipkan {{ periode }}?</h1>
@@ -10,7 +12,7 @@
       tetap tercatat dan muncul di SER periode berikutnya (BR-17). Tindakan dan alasan dicatat di riwayat tiap audit.
     </p>
     {% if belum_final %}
-      <p class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="alert">
+      <p class="kotak-peringatan" role="alert">
         {{ belum_final }} audit belum Final dan tidak ikut ditutup.
       </p>
     {% endif %}

@@ -2,32 +2,37 @@
 
 {% block head_title %}Tren {{ unit }}{% endblock head_title %}
 
+{% block remah %}
+  <li class="remah"><a href="{% url 'analitik:beranda' %}" class="hover:text-slate-800">Analitik</a></li>
+  <li class="remah">Tren {{ unit }}</li>
+{% endblock remah %}
+
 {% block content %}
-  <p class="text-sm"><a href="{% url 'analitik:beranda' %}" class="text-blue-800 underline-offset-4 hover:underline">← Analitik</a></p>
-  <h1 class="mt-2 text-2xl font-bold text-slate-900">Tren {{ unit }}</h1>
+  <h1 class="text-3xl font-bold text-slate-900">Tren {{ unit }}</h1>
   <p class="mt-1 text-sm text-slate-600">{{ unit.tipe }}{% if unit.induk %} · {{ unit.induk }}{% endif %} · nilai efektif final dan jumlah temuan per periode</p>
 
   {% if baris %}
-    <section class="kartu mt-6 overflow-x-auto" aria-label="Grafik tren">{{ svg }}</section>
+    <section class="kartu mt-6 overflow-x-auto" aria-label="Grafik tren">
+      <h2 class="mb-3 text-lg font-semibold text-slate-900">Nilai efektif final dan jumlah temuan</h2>{{ svg }}</section>
     <section class="kartu mt-6 overflow-x-auto p-0" aria-labelledby="judul-tabel">
       <h2 id="judul-tabel" class="sr-only">Tabel tren</h2>
       <table class="w-full min-w-[560px] text-left text-sm">
-        <thead class="border-b border-slate-200 bg-slate-50 text-slate-700">
-          <tr><th class="px-3 py-2">Periode</th><th class="px-3 py-2">NE</th><th class="px-3 py-2">KKM</th><th class="px-3 py-2">Kelebihan</th><th class="px-3 py-2">KTS</th><th class="px-3 py-2">OB</th><th class="px-3 py-2">Peluang</th></tr>
+        <thead class="kepala-tabel">
+          <tr><th class="px-4 py-3">Periode</th><th class="px-4 py-3">NE</th><th class="px-4 py-3">KKM</th><th class="px-4 py-3">Kelebihan</th><th class="px-4 py-3">KTS</th><th class="px-4 py-3">OB</th><th class="px-4 py-3">Peluang</th></tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
           {% for r in baris %}
             <tr>
-              <td class="px-3 py-2">{{ r.periode }}</td>
-              <td class="px-3 py-2 font-medium">{{ r.ne }}</td>
-              <td class="px-3 py-2 {% if r.memenuhi_kkm %}text-green-700{% else %}text-red-700{% endif %}">{% if r.memenuhi_kkm %}Memenuhi{% else %}Belum memenuhi{% endif %}</td>
-              <td class="px-3 py-2">{{ r.kelebihan }}</td><td class="px-3 py-2">{{ r.kts }}</td><td class="px-3 py-2">{{ r.ob }}</td><td class="px-3 py-2">{{ r.peluang }}</td>
+              <td class="px-4 py-3">{{ r.periode }}</td>
+              <td class="px-4 py-3 font-medium">{{ r.ne }}</td>
+              <td class="px-4 py-3 font-medium {% if r.memenuhi_kkm %}text-green-700{% else %}text-red-700{% endif %}">{% if r.memenuhi_kkm %}Memenuhi{% else %}Belum memenuhi{% endif %}</td>
+              <td class="px-4 py-3">{{ r.kelebihan }}</td><td class="px-4 py-3">{{ r.kts }}</td><td class="px-4 py-3">{{ r.ob }}</td><td class="px-4 py-3">{{ r.peluang }}</td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </section>
   {% else %}
-    <p class="kartu mt-6 text-sm text-slate-600">Belum ada audit Final untuk unit ini.</p>
+    <p class="kartu mt-6 py-10 text-center text-sm text-slate-600">Belum ada audit Final untuk unit ini.</p>
   {% endif %}
 {% endblock content %}

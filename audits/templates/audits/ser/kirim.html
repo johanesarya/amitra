@@ -1,40 +1,124 @@
 {% extends "base.html" %}
+{% load siami %}
 
 {% block head_title %}Kirim SER{% endblock head_title %}
+{% block remah %}
+  <li class="remah"><a href="{% url 'audits:detail' audit.pk %}" class="hover:text-slate-800">{{ audit.unit }}</a></li>
+  <li class="remah"><a href="{% url 'audits:ser' audit.pk %}" class="hover:text-slate-800">SER</a></li>
+  <li class="remah">Tinjau dan kirim</li>
+{% endblock remah %}
 
 {% block content %}
-  <p class="text-sm"><a href="{% url 'audits:ser' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← Kembali ke SER</a></p>
-  <div class="kartu mx-auto mt-4 max-w-2xl space-y-5">
-    <h1 class="text-xl font-bold text-slate-900">Tinjau dan kirim SER</h1>
-    <p class="text-sm text-slate-700">{{ audit.unit }} · {{ audit.periode }}</p>
+  <div class="space-y-6">
+    {% stepper audit %}
 
-    <dl class="grid grid-cols-2 gap-4 text-sm">
-      <div class="rounded-md bg-slate-50 p-3"><dt class="text-slate-600">Butir lengkap</dt><dd class="text-2xl font-bold text-slate-900">{{ ringkasan.lengkap }}</dd></div>
-      <div class="rounded-md bg-slate-50 p-3"><dt class="text-slate-600">Total butir</dt><dd class="text-2xl font-bold text-slate-900">{{ ringkasan.total }}</dd></div>
+    <section class="kartu flex flex-wrap items-center gap-4">
+      <span class="flex size-12 items-center justify-center rounded-xl bg-primer-50 text-primer-700">{% include "_ikon.html" with n="tugas" k="size-6" %}</span>
+      <div>
+        <p class="judul-kecil">Evaluasi diri auditee · pernyataan mandiri</p>
+        <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Tinjau dan kirim SER — {{ audit.unit }}</h1>
+        <p class="text-sm text-slate-600">{{ audit.periode }}{% if audit.batas_ser %} · Batas pengisian {{ audit.batas_ser|date:"l, j F Y" }}{% endif %}</p>
+      </div>
+    </section>
+
+    <dl class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div class="kartu flex flex-col gap-1 p-5"><dt class="text-sm text-slate-600">Butir lengkap</dt><dd class="text-3xl font-bold text-slate-900">{{ ringkasan.lengkap }} <span class="text-base font-normal text-slate-500">dari {{ ringkasan.total }}</span></dd></div>
+      <div class="kartu flex flex-col gap-1 p-5"><dt class="text-sm text-slate-600">Total butir</dt><dd class="text-3xl font-bold text-slate-900">{{ ringkasan.total }}</dd></div>
+      <div class="kartu flex flex-col gap-1 p-5">
+        <dt class="text-sm text-slate-600">Kelengkapan <span class="block text-xs text-slate-500">Syarat kirim: 100%</span></dt>
+        <dd class="text-3xl font-bold text-slate-900">{% widthratio ringkasan.lengkap ringkasan.total 100 %}%
+          <span class="mt-2 block h-1.5 rounded-full bg-slate-200" aria-hidden="true"><span class="block h-1.5 rounded-full bg-primer-700" style="width: {% widthratio ringkasan.lengkap ringkasan.total 100 %}%"></span></span>
+        </dd>
+      </div>
+      <div class="kartu flex flex-col gap-1 p-5">
+        <dt class="text-sm text-slate-600">Status pengiriman</dt>
+        <dd>{% if ringkasan.siap_dikirim %}<span class="lencana bg-green-50 text-green-700 ring-green-600/20">Siap dikirim</span>{% else %}<span class="lencana bg-amber-50 text-amber-800 ring-amber-600/25">Belum siap dikirim</span>{% endif %}</dd>
+      </div>
     </dl>
 
     {% if ringkasan.belum_lengkap %}
-      <div class="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status">
-        <p class="font-semibold">{{ ringkasan.belum_lengkap|length }} butir belum lengkap:</p>
-        <ul class="mt-2 space-y-1">
+      <section class="space-y-4" aria-labelledby="judul-belum">
+        <div class="kotak-peringatan flex items-start gap-3" role="status">
+          {% include "_ikon.html" with n="peringatan" k="mt-0.5 size-5" %}
+          <div>
+            <h2 id="judul-belum" class="font-semibold">{{ ringkasan.belum_lengkap|length }} butir belum lengkap:</h2>
+            <p>Lengkapi kategori, penjelasan, dan minimal satu bukti pada butir berikut sebelum mengirim.</p>
+          </div>
+        </div>
+        <ul class="grid gap-4 md:grid-cols-2">
           {% for p, kurang in ringkasan.belum_lengkap %}
-            <li>
-              <a href="{% url 'audits:ser' audit.pk %}?butir={{ p.pk }}" class="font-medium underline">{{ p.kode }}</a>
-              — belum ada {{ kurang|join:" dan " }}
+            <li class="kartu space-y-3 p-5">
+              <p class="flex items-center justify-between gap-2 text-xs"><span class="font-semibold text-slate-500">Butir {{ p.kode }}</span><span class="lencana bg-red-50 text-red-700 ring-red-600/20">Belum lengkap</span></p>
+              <p class="text-sm font-medium text-slate-900">{{ p.pernyataan|truncatechars:120 }}</p>
+              <p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">— belum ada {{ kurang|join:", " }}</p>
+              <a href="{% url 'audits:ser' audit.pk %}?butir={{ p.pk }}" class="tombol-lembut w-full">Lengkapi butir {{ p.kode }} {% include "_ikon.html" with n="kanan" k="size-4" %}</a>
             </li>
           {% endfor %}
         </ul>
-      </div>
+      </section>
     {% endif %}
 
-    <p class="text-sm text-slate-700">
-      Setelah dikirim, SER <strong>terkunci</strong> dan tidak dapat diubah lagi. Auditor akan mulai menilai.
-    </p>
-    <form method="post">
+    <section class="kartu space-y-4" aria-labelledby="judul-kategori">
+      <div>
+        <h2 id="judul-kategori" class="text-lg font-semibold text-slate-900">Ringkasan kategori evaluasi diri</h2>
+        <p class="text-sm text-slate-600">Kategori pilihan Anda menjadi pembanding bagi auditor dan tidak masuk perhitungan nilai.</p>
+      </div>
+      <dl class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {% for nilai, label, n in per_kategori %}
+          <div class="flex flex-col gap-2 rounded-xl border border-slate-200 p-4">
+            <dt><span class="lencana {{ nilai|kelas_kategori }}">{{ label }}</span></dt>
+            <dd class="text-2xl font-bold text-slate-900">{{ n }} <span class="text-sm font-normal text-slate-500">butir</span></dd>
+          </div>
+        {% endfor %}
+      </dl>
+    </section>
+
+    <section class="kartu overflow-x-auto p-0" aria-labelledby="judul-tabel">
+      <h2 id="judul-tabel" class="px-6 pt-5 pb-3 text-lg font-semibold text-slate-900">Pratinjau seluruh butir SER</h2>
+      <table class="w-full min-w-[760px] text-left text-sm">
+        <thead class="kepala-tabel">
+          <tr>
+            <th scope="col" class="px-6 py-3">Kode</th>
+            <th scope="col" class="px-3 py-3">Pernyataan standar</th>
+            <th scope="col" class="px-3 py-3">Kategori</th>
+            <th scope="col" class="px-3 py-3">Bukti</th>
+            <th scope="col" class="px-3 py-3">Kelengkapan</th>
+            <th scope="col" class="px-6 py-3"><span class="sr-only">Aksi</span></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for p, j, kurang in butir %}
+            <tr class="align-top {% if kurang %}bg-red-50/40{% endif %}">
+              <td class="px-6 py-3 font-semibold">{{ p.kode }}</td>
+              <td class="px-3 py-3 text-slate-700">{{ p.pernyataan|truncatechars:90 }}</td>
+              <td class="px-3 py-3">{% if j.kategori %}<span class="lencana {{ j.kategori|kelas_kategori }}">{{ j.get_kategori_display }}</span>{% else %}<span class="lencana bg-slate-50 text-slate-500 ring-slate-500/20">Belum dipilih</span>{% endif %}</td>
+              <td class="px-3 py-3 text-slate-600">{{ j.bukti.all|length|default:"0" }}</td>
+              <td class="px-3 py-3">{% if kurang %}<span class="lencana bg-red-50 text-red-700 ring-red-600/20">Belum lengkap</span>{% else %}<span class="lencana bg-green-50 text-green-700 ring-green-600/20">Lengkap</span>{% endif %}</td>
+              <td class="px-6 py-3 text-right"><a href="{% url 'audits:ser' audit.pk %}?butir={{ p.pk }}" class="tautan">{% if kurang %}Lengkapi{% else %}Lihat{% endif %}</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <form method="post" class="kartu space-y-4">
       {% csrf_token %}
-      <button type="submit" class="tombol-utama" {% if not ringkasan.siap_dikirim or not bisa_ubah %}disabled{% endif %}>
-        Kirim SER sekarang
-      </button>
+      <div class="flex items-start gap-3 rounded-xl border border-primer-100 bg-primer-50 p-4 text-sm text-primer-900">
+        <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primer-700 text-white">{% include "_ikon.html" with n="gembok" k="size-5" %}</span>
+        <p>Setelah dikirim, SER <strong>terkunci</strong> dan tidak dapat diubah lagi. Auditor akan mulai menilai.</p>
+      </div>
+      {% if ringkasan.siap_dikirim and bisa_ubah %}
+        <label class="flex items-start gap-3 rounded-xl border border-slate-200 p-4 text-sm">
+          <input type="checkbox" required class="mt-0.5 size-4 accent-primer-700">
+          <span>Saya menyatakan isian evaluasi diri dan bukti yang dilampirkan dalam SER ini sesuai dengan kondisi unit.</span>
+        </label>
+      {% endif %}
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <a href="{% url 'audits:ser' audit.pk %}" class="tombol-kedua">{% include "_ikon.html" with n="kiri" k="size-4" %}Kembali ke pengisian SER</a>
+        <button type="submit" class="tombol-utama" {% if not ringkasan.siap_dikirim or not bisa_ubah %}disabled{% endif %}>
+          {% include "_ikon.html" with n="gembok" k="size-4" %}Kirim SER sekarang
+        </button>
+      </div>
     </form>
   </div>
 {% endblock content %}

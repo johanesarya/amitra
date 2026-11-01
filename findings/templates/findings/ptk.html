@@ -1,89 +1,116 @@
 {% extends "base.html" %}
+{% load siami %}
 
 {% block head_title %}PTK {{ audit.unit }}{% endblock head_title %}
+{% block remah %}
+  <li class="remah"><a href="{% url 'audits:detail' audit.pk %}" class="hover:text-slate-800">{{ audit.unit }}</a></li>
+  <li class="remah"><a href="{% url 'findings:persetujuan' audit.pk %}" class="hover:text-slate-800">Hasil AMI</a></li>
+  <li class="remah">PTK</li>
+{% endblock remah %}
 
 {% block content %}
-  <p class="text-sm"><a href="{% url 'findings:persetujuan' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← Hasil AMI</a></p>
-  <h1 class="mt-2 text-2xl font-bold text-slate-900">Permintaan Tindakan Koreksi (PTK)</h1>
-  <p class="mt-1 text-sm text-slate-600">{{ audit.unit }} · {{ audit.periode }} · {{ audit.get_status_display }}</p>
+  <div class="space-y-6">
+    {% stepper audit %}
 
-  {% if bisa_isi %}
-    <p class="mt-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-      <strong>Langkah 1:</strong> isi akar masalah, rencana tindakan koreksi, target selesai, dan penanggung jawab untuk setiap PTK,
-      lalu kirim rencana. Setelah dikirim, rencana terkunci dan Anda mencatat realisasinya.
-    </p>
-  {% elif bisa_realisasi %}
-    <p class="mt-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-      <strong>Langkah 2:</strong> laksanakan rencana, lalu catat realisasi dan bukti tindak lanjut (sebaiknya tautan Google Drive).
-      Tim auditor periode berikutnya akan memverifikasi efektivitasnya.
-    </p>
-  {% endif %}
-
-  <div class="mt-6 space-y-4">
-    {% for p in daftar_ptk %}
-      <article id="ptk-{{ p.pk }}" class="kartu space-y-3">
-        <div class="flex flex-wrap items-start justify-between gap-2">
-          <h2 class="font-semibold text-slate-900">{{ p.kode }} · {{ p.temuan.get_jenis_display }}</h2>
-          <span class="rounded px-2 py-0.5 text-xs {% if p.status == 'EFEKTIF' %}bg-green-100 text-green-800{% elif p.status == 'TIDAK_EFEKTIF' %}bg-red-100 text-red-800{% else %}bg-slate-100 text-slate-700{% endif %}">{{ p.get_status_display }}</span>
+    <section class="kartu space-y-4">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="space-y-1">
+          <span class="lencana {{ audit.status|kelas_status }}">{{ audit.get_status_display }}</span>
+          <h1 class="text-2xl font-bold text-slate-900">Permintaan Tindakan Koreksi (PTK)</h1>
+          <p class="text-sm text-slate-600">{{ audit.unit }} · {{ audit.periode }} · {{ audit.get_status_display }}</p>
         </div>
-        <p class="text-sm"><span class="font-medium">{{ p.temuan.pernyataan.standar.kode }} · {{ p.temuan.pernyataan.kode }}</span> {{ p.temuan.pernyataan.pernyataan }}</p>
-        <p class="whitespace-pre-line rounded-md bg-slate-50 p-3 text-sm text-slate-800"><span class="font-medium">Uraian temuan:</span> {{ p.temuan.uraian }}</p>
-        {% if p.nomor_surat %}<p class="text-xs text-slate-500">Nomor surat: {{ p.nomor_surat }}</p>{% endif %}
+        <a href="{% url 'documents:daftar' audit.pk %}" class="tombol-kedua">{% include "_ikon.html" with n="dokumen" k="size-4" %}Dokumen PTK</a>
+      </div>
+      {% if bisa_isi %}
+        <div class="kotak-info flex items-start gap-3">
+          <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primer-700 text-xs font-bold text-white">1</span>
+          <p><strong>Langkah 1:</strong> isi akar masalah, rencana tindakan koreksi, target selesai, dan penanggung jawab untuk setiap PTK,
+            lalu kirim rencana. Setelah dikirim, rencana terkunci dan Anda mencatat realisasinya.</p>
+        </div>
+      {% elif bisa_realisasi %}
+        <div class="kotak-info flex items-start gap-3">
+          <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primer-700 text-xs font-bold text-white">2</span>
+          <p><strong>Langkah 2:</strong> laksanakan rencana, lalu catat realisasi dan bukti tindak lanjut (sebaiknya tautan Google Drive).
+            Tim auditor periode berikutnya akan memverifikasi efektivitasnya.</p>
+        </div>
+      {% endif %}
+    </section>
 
-        {% if bisa_isi %}
-          <form method="post" class="grid gap-3 sm:grid-cols-2">
-            {% csrf_token %}
-            <input type="hidden" name="aksi" value="rencana"><input type="hidden" name="ptk" value="{{ p.pk }}">
-            <label class="block sm:col-span-2"><span class="label">Akar masalah</span><textarea name="akar_masalah" rows="2" class="isian">{{ p.akar_masalah }}</textarea></label>
-            <label class="block sm:col-span-2"><span class="label">Rencana tindakan koreksi</span><textarea name="rencana_tindakan" rows="3" class="isian">{{ p.rencana_tindakan }}</textarea></label>
-            <label class="block"><span class="label">Target selesai</span><input type="date" name="target_tanggal" value="{{ p.target_tanggal|date:'Y-m-d' }}" class="isian"></label>
-            <label class="block"><span class="label">Penanggung jawab (PIC)</span><input type="text" name="pic" value="{{ p.pic }}" maxlength="200" class="isian"></label>
-            <div class="sm:col-span-2"><button type="submit" class="tombol-kedua">Simpan rencana</button></div>
-          </form>
-        {% else %}
-          <dl class="grid gap-2 text-sm sm:grid-cols-2">
-            <div class="sm:col-span-2"><dt class="font-medium">Akar masalah</dt><dd class="whitespace-pre-line">{{ p.akar_masalah|default:"—" }}</dd></div>
-            <div class="sm:col-span-2"><dt class="font-medium">Rencana tindakan</dt><dd class="whitespace-pre-line">{{ p.rencana_tindakan|default:"—" }}</dd></div>
-            <div><dt class="font-medium">Target</dt><dd>{{ p.target_tanggal|date:"j F Y"|default:"—" }}</dd></div>
-            <div><dt class="font-medium">PIC</dt><dd>{{ p.pic|default:"—" }}</dd></div>
-          </dl>
-        {% endif %}
+    {% for p in daftar_ptk %}
+      <article id="ptk-{{ p.pk }}" class="kartu space-y-5 border-l-4 {% if p.temuan.jenis == 'KTS' %}border-l-red-500{% else %}border-l-amber-500{% endif %}">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 class="flex flex-wrap items-center gap-2 text-lg font-semibold text-slate-900">
+              {{ p.kode }} · {{ p.temuan.get_jenis_display }}
+            </h2>
+            <p class="text-xs text-slate-500">{% if p.nomor_surat %}Nomor surat: {{ p.nomor_surat }} · {% endif %}{{ p.temuan.pernyataan.standar.kode }} · butir {{ p.temuan.pernyataan.kode }}</p>
+          </div>
+          <span class="lencana {% if p.status == 'EFEKTIF' %}bg-green-50 text-green-700 ring-green-600/20{% elif p.status == 'TIDAK_EFEKTIF' %}bg-red-50 text-red-700 ring-red-600/20{% else %}bg-slate-100 text-slate-700 ring-slate-500/20{% endif %}">{{ p.get_status_display }}</span>
+        </div>
+        <div class="rounded-xl bg-slate-50 p-4 text-sm">
+          <p class="judul-kecil">Deskripsi temuan</p>
+          <p class="mt-1"><span class="font-medium">{{ p.temuan.pernyataan.standar.kode }} · {{ p.temuan.pernyataan.kode }}</span> {{ p.temuan.pernyataan.pernyataan }}</p>
+          <p class="mt-2 whitespace-pre-line text-slate-800"><span class="font-medium">Uraian temuan:</span> {{ p.temuan.uraian }}</p>
+        </div>
+
+        <div class="space-y-3">
+          <h3 class="flex items-center gap-2 font-semibold text-slate-900"><span class="flex size-6 items-center justify-center rounded-full bg-slate-900 text-xs text-white">1</span>Rencana tindak lanjut</h3>
+          {% if bisa_isi %}
+            <form method="post" class="grid gap-4 sm:grid-cols-2">
+              {% csrf_token %}
+              <input type="hidden" name="aksi" value="rencana"><input type="hidden" name="ptk" value="{{ p.pk }}">
+              <label class="block sm:col-span-2"><span class="label">Akar masalah</span><textarea name="akar_masalah" rows="2" class="isian">{{ p.akar_masalah }}</textarea></label>
+              <label class="block sm:col-span-2"><span class="label">Rencana tindakan koreksi</span><textarea name="rencana_tindakan" rows="3" class="isian">{{ p.rencana_tindakan }}</textarea></label>
+              <label class="block"><span class="label">Target selesai</span><input type="date" name="target_tanggal" value="{{ p.target_tanggal|date:'Y-m-d' }}" class="isian"></label>
+              <label class="block"><span class="label">Penanggung jawab (PIC)</span><input type="text" name="pic" value="{{ p.pic }}" maxlength="200" class="isian"></label>
+              <div class="sm:col-span-2 flex justify-end"><button type="submit" class="tombol-kedua">Simpan rencana</button></div>
+            </form>
+          {% else %}
+            <dl class="grid gap-4 rounded-xl border border-slate-200 p-4 text-sm sm:grid-cols-4">
+              <div class="sm:col-span-2"><dt class="judul-kecil">Akar masalah</dt><dd class="mt-1 whitespace-pre-line">{{ p.akar_masalah|default:"—" }}</dd></div>
+              <div class="sm:col-span-2"><dt class="judul-kecil">Rencana tindakan</dt><dd class="mt-1 whitespace-pre-line">{{ p.rencana_tindakan|default:"—" }}</dd></div>
+              <div class="sm:col-span-2"><dt class="judul-kecil">Target</dt><dd class="mt-1">{{ p.target_tanggal|date:"j F Y"|default:"—" }}</dd></div>
+              <div class="sm:col-span-2"><dt class="judul-kecil">PIC</dt><dd class="mt-1">{{ p.pic|default:"—" }}</dd></div>
+            </dl>
+          {% endif %}
+        </div>
 
         {% if p.rencana_dikirim_pada %}
-          <div class="space-y-2 border-t border-slate-100 pt-3">
-            <h3 class="font-semibold text-slate-900">Realisasi tindak lanjut</h3>
+          <div class="space-y-3 border-t border-slate-100 pt-4">
+            <h3 class="flex items-center gap-2 font-semibold text-slate-900"><span class="flex size-6 items-center justify-center rounded-full bg-slate-900 text-xs text-white">2</span>Realisasi tindak lanjut</h3>
             {% if bisa_realisasi and not p.sudah_diverifikasi %}
               <form method="post" class="space-y-2">
                 {% csrf_token %}<input type="hidden" name="aksi" value="realisasi"><input type="hidden" name="ptk" value="{{ p.pk }}">
                 <textarea name="realisasi" rows="3" class="isian" aria-label="Realisasi {{ p.kode }}">{{ p.realisasi }}</textarea>
-                <button type="submit" class="tombol-kedua px-3 py-1.5">Simpan realisasi</button>
+                <div class="flex justify-end"><button type="submit" class="tombol-kedua">Simpan realisasi</button></div>
               </form>
             {% else %}
               <p class="whitespace-pre-line text-sm text-slate-800">{{ p.realisasi|default:"Belum diisi." }}</p>
             {% endif %}
-            <ul class="divide-y divide-slate-100 rounded-md border border-slate-200 text-sm">
+            <ul class="space-y-2 text-sm">
               {% for b in p.bukti.all %}
-                <li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-                  {% if b.jenis == "TAUTAN" %}<a href="{{ b.url }}" target="_blank" rel="noopener noreferrer" class="break-all text-blue-800 underline">{{ b.nama }}</a>
-                  {% else %}<a href="{% url 'findings:ptk_bukti' audit.pk b.pk %}" class="text-blue-800 underline">{{ b.nama }}</a>{% endif %}
+                <li class="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 px-4 py-2">
+                  <span class="text-slate-500">{% if b.jenis == "TAUTAN" %}{% include "_ikon.html" with n="tautan" k="size-4" %}{% else %}{% include "_ikon.html" with n="dokumen" k="size-4" %}{% endif %}</span>
+                  {% if b.jenis == "TAUTAN" %}<a href="{{ b.url }}" target="_blank" rel="noopener noreferrer" class="tautan min-w-0 flex-1 break-all">{{ b.nama }}</a>
+                  {% else %}<a href="{% url 'findings:ptk_bukti' audit.pk b.pk %}" class="tautan min-w-0 flex-1">{{ b.nama }}</a>{% endif %}
                   {% if bisa_realisasi and not p.sudah_diverifikasi %}
-                    <form method="post">{% csrf_token %}<input type="hidden" name="aksi" value="bukti_hapus"><input type="hidden" name="bukti" value="{{ b.pk }}"><button type="submit" class="text-red-700 underline">Hapus</button></form>
+                    <form method="post">{% csrf_token %}<input type="hidden" name="aksi" value="bukti_hapus"><input type="hidden" name="bukti" value="{{ b.pk }}"><button type="submit" class="rounded-md px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-50">Hapus</button></form>
                   {% endif %}
                 </li>
               {% empty %}
-                <li class="px-3 py-2 text-slate-600">Belum ada bukti tindak lanjut.</li>
+                <li class="rounded-lg border border-dashed border-slate-300 px-4 py-3 text-slate-600">Belum ada bukti tindak lanjut.</li>
               {% endfor %}
             </ul>
             {% if bisa_realisasi and not p.sudah_diverifikasi %}
-              <form method="post" class="grid gap-2 sm:grid-cols-[1fr_12rem_auto]">
+              <form method="post" class="grid gap-2 rounded-xl border border-dashed border-primer-200 bg-primer-50/40 p-4 sm:grid-cols-[1fr_12rem_auto]">
                 {% csrf_token %}<input type="hidden" name="aksi" value="bukti_tautan"><input type="hidden" name="ptk" value="{{ p.pk }}">
                 <label><span class="sr-only">Tautan Google Drive</span><input type="url" name="url" required placeholder="https://drive.google.com/…" class="isian"></label>
                 <label><span class="sr-only">Nama bukti</span><input type="text" name="nama" placeholder="Nama bukti (opsional)" class="isian"></label>
-                <button type="submit" class="tombol-kedua">Tambah tautan</button>
+                <button type="submit" class="tombol-lembut">{% include "_ikon.html" with n="tambah" k="size-4" %}Tambah tautan</button>
               </form>
-              <details class="text-sm">
-                <summary class="cursor-pointer text-slate-700">Unggah berkas (maks. 20 MB)</summary>
-                <form method="post" enctype="multipart/form-data" class="mt-2 flex flex-wrap items-center gap-2">
+              <details class="rounded-xl border border-slate-200 text-sm">
+                <summary class="cursor-pointer px-4 py-3 font-medium text-slate-700">Unggah berkas (maks. 20 MB)</summary>
+                <form method="post" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2 border-t border-slate-100 px-4 py-3">
                   {% csrf_token %}<input type="hidden" name="aksi" value="bukti_unggah"><input type="hidden" name="ptk" value="{{ p.pk }}">
                   <label><span class="sr-only">Berkas bukti</span><input type="file" name="berkas" required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" class="text-sm"></label>
                   <button type="submit" class="tombol-kedua">Unggah</button>
@@ -94,7 +121,7 @@
         {% endif %}
 
         {% if p.sudah_diverifikasi %}
-          <div class="rounded-md border px-3 py-2 text-sm {% if p.status == 'EFEKTIF' %}border-green-200 bg-green-50 text-green-900{% else %}border-red-200 bg-red-50 text-red-900{% endif %}">
+          <div class="{% if p.status == 'EFEKTIF' %}kotak-sukses{% else %}kotak-galat{% endif %}">
             <p class="font-semibold">Verifikasi: {{ p.get_status_display }}</p>
             <p class="whitespace-pre-line">{{ p.catatan_verifikasi }}</p>
             <p class="text-xs">{{ p.diverifikasi_oleh }} · {{ p.diverifikasi_pada|date:"j M Y" }}{% if p.diverifikasi_di %} · audit {{ p.diverifikasi_di.periode }}{% endif %}</p>
@@ -102,16 +129,21 @@
         {% endif %}
       </article>
     {% empty %}
-      <p class="kartu text-sm text-slate-600">Tidak ada temuan KTS/OB, sehingga tidak ada PTK.</p>
+      <div class="kartu py-10 text-center">
+        <span class="mx-auto flex size-12 items-center justify-center rounded-full bg-green-50 text-green-700">{% include "_ikon.html" with n="centang" k="size-6" %}</span>
+        <p class="mt-3 text-sm text-slate-600">Tidak ada temuan KTS/OB, sehingga tidak ada PTK.</p>
+      </div>
     {% endfor %}
-  </div>
 
-  {% if bisa_isi %}
-    <form method="post" class="kartu mt-6 space-y-3">
-      {% csrf_token %}<input type="hidden" name="aksi" value="kirim_rencana">
-      <p class="text-sm text-slate-700">Setelah dikirim, rencana <strong>tidak dapat diubah</strong>. Status audit menjadi Tindak Lanjut PTK.</p>
-      <button type="submit" class="tombol-utama" {% if not bisa_kirim %}disabled{% endif %}>Kirim rencana PTK</button>
-      {% if not bisa_kirim %}<p class="text-xs text-slate-500">Lengkapi rencana semua PTK terlebih dahulu.</p>{% endif %}
-    </form>
-  {% endif %}
+    {% if bisa_isi %}
+      <form method="post" class="kartu flex flex-wrap items-center justify-between gap-4">
+        {% csrf_token %}<input type="hidden" name="aksi" value="kirim_rencana">
+        <div class="text-sm text-slate-700">
+          <p>Setelah dikirim, rencana <strong>tidak dapat diubah</strong>. Status audit menjadi Tindak Lanjut PTK.</p>
+          {% if not bisa_kirim %}<p class="text-xs text-slate-500">Lengkapi rencana semua PTK terlebih dahulu.</p>{% endif %}
+        </div>
+        <button type="submit" class="tombol-utama" {% if not bisa_kirim %}disabled{% endif %}>Kirim rencana PTK {% include "_ikon.html" with n="kanan" k="size-4" %}</button>
+      </form>
+    {% endif %}
+  </div>
 {% endblock content %}

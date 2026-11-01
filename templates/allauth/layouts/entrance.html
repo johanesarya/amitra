@@ -1,0 +1,39 @@
+{% load static %}<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block head_title %}Masuk{% endblock head_title %} · SI-AMI v2</title>
+  <link rel="icon" href="{% static 'img/logo-scu.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'vendor/alpine.min.js' %}" defer></script>
+</head>
+{% comment %}Halaman masuk dan halaman allauth lain sebelum login: tanpa sidebar, satu kartu di tengah.{% endcomment %}
+<body class="flex min-h-full flex-col bg-slate-50 text-slate-900 antialiased">
+  <main id="konten" class="flex flex-1 items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md">
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+        <div class="h-1.5 bg-gradient-to-r from-primer-700 via-primer-500 to-aksen-400" aria-hidden="true"></div>
+        <div class="space-y-5 px-6 py-8 sm:px-10">
+          <div class="text-center">
+            <img src="{% static 'img/logo-scu.svg' %}" alt="Logo Soegijapranata Catholic University" class="mx-auto h-16 w-auto">
+            <p class="mt-4 text-sm font-semibold text-primer-700">Sistem Informasi Audit Mutu Internal</p>
+            <p class="text-xs text-slate-500">Lembaga Penjaminan Mutu · Soegijapranata Catholic University</p>
+          </div>
+          {% if messages %}
+            <ul class="space-y-2" role="status">
+              {% for message in messages %}
+                <li class="{% if message.level_tag == 'error' %}kotak-galat{% elif message.level_tag == 'success' %}kotak-sukses{% else %}kotak-info{% endif %}">{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+          {% block content %}{% endblock content %}
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="border-t border-slate-200 bg-white px-4 py-4 text-center text-xs text-slate-500">
+    Akses terbatas untuk sivitas akademika dan pihak yang diundang LPM Soegijapranata Catholic University.
+  </footer>
+</body>
+</html>

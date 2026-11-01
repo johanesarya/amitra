@@ -90,6 +90,7 @@ def dashboard(request):
         JawabanSER.objects.filter(audit_id__in=ids)
         .annotate(isi=Trim("penjelasan"), jumlah_bukti=Count("bukti"))
         .exclude(isi="")
+        .exclude(kategori="")
         .filter(jumlah_bukti__gt=0)
         .values("audit_id")
         .annotate(n=Count("id"))

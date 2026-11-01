@@ -1,0 +1,26 @@
+{% comment %}NFR-20: posisi audit dalam enam langkah dan langkah berikutnya. Dipanggil lewat {% stepper audit %}.{% endcomment %}
+<nav aria-label="Progres audit" class="kartu p-4 sm:p-5">
+  <ol class="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-6">
+    {% for l in langkah %}
+      <li class="border-t-4 pt-2 {% if l.keadaan == 'selesai' %}border-green-600{% elif l.keadaan == 'aktif' %}border-primer-700{% else %}border-slate-200{% endif %}"
+          {% if l.keadaan == "aktif" %}aria-current="step"{% endif %}>
+        <span class="flex items-center gap-2">
+          <span class="flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold
+                       {% if l.keadaan == 'selesai' %}bg-green-600 text-white{% elif l.keadaan == 'aktif' %}bg-primer-700 text-white ring-4 ring-primer-100{% else %}border border-slate-300 bg-white text-slate-500{% endif %}">
+            {% if l.keadaan == "selesai" %}{% include "_ikon.html" with n="centang" k="size-4" %}{% else %}{{ l.nomor }}{% endif %}
+          </span>
+          <span class="min-w-0">
+            <span class="block text-sm {% if l.keadaan == 'menunggu' %}text-slate-500{% else %}font-semibold text-slate-900{% endif %}">{{ l.nomor }}. {{ l.label }}</span>
+            <span class="block text-xs {% if l.keadaan == 'aktif' %}font-medium text-primer-700{% else %}text-slate-500{% endif %}">
+              {% if l.keadaan == "selesai" %}Selesai{% elif l.keadaan == "aktif" %}{{ audit.get_status_display }}{% else %}Menunggu{% endif %}
+            </span>
+          </span>
+        </span>
+      </li>
+    {% endfor %}
+  </ol>
+  <p class="kotak-info mt-4 flex items-start gap-2">
+    {% include "_ikon.html" with n="info" k="mt-0.5 size-4" %}
+    <span><strong>Langkah berikutnya:</strong> {{ berikutnya }}</span>
+  </p>
+</nav>

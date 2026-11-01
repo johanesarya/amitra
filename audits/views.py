@@ -42,10 +42,43 @@ def beranda(request):
     penugasan = list(penugasan)
     for p in penugasan:
         p.tenggat = tenggat.get(p.audit_id)
+        p.aksi = _aksi_penugasan(p)
     punya_hasil_final = Penugasan.objects.filter(
         pengguna=request.user, peran=Penugasan.Peran.AUDITEE, audit__status__in=penilaian.STATUS_SETELAH_FINAL
     ).exists()
-    return render(request, "audits/beranda.html", {"daftar_penugasan": penugasan, "punya_hasil_final": punya_hasil_final})
+    return render(
+        request,
+        "audits/beranda.html",
+        {
+            "daftar_penugasan": penugasan,
+            "punya_hasil_final": punya_hasil_final,
+            "jumlah_auditee": sum(p.peran == Penugasan.Peran.AUDITEE for p in penugasan),
+            "perlu_tindakan": sum(p.aksi is not None for p in penugasan),
+        },
+    )
+
+
+def _aksi_penugasan(p):
+    """Tombol tugas berikutnya di kartu Tugas Saya: (label, url), atau None bila tidak ada yang perlu dikerjakan."""
+    a, S = p.audit, Audit.Status
+    auditee, auditor = p.peran == Penugasan.Peran.AUDITEE, p.peran == Penugasan.Peran.AUDITOR
+    if auditee and a.ser_bisa_diisi:
+        return "Isi SER", reverse("audits:ser", args=[a.pk])
+    if auditor and a.status == S.PENILAIAN_AUDITOR and not p.dikunci_pada:
+        return "Nilai SER", reverse("audits:penilaian", args=[a.pk])
+    if p.ketua and a.status == S.REKONSILIASI:
+        return "Rekonsiliasi", reverse("audits:rekonsiliasi", args=[a.pk])
+    if p.ketua and a.status == S.PERLU_AUDIT_LAPANGAN:
+        return "Audit Lapangan", reverse("audits:audit_lapangan", args=[a.pk])
+    if auditor and a.revisi_al_dibuka and not p.dikunci_pada:
+        return "Revisi penilaian", reverse("audits:penilaian", args=[a.pk])
+    if p.ketua and a.status == S.PERUMUSAN_TEMUAN:
+        return "Rumuskan temuan", reverse("findings:perumusan", args=[a.pk])
+    if auditee and a.status == S.MENUNGGU_PERSETUJUAN:
+        return "Tinjau dan setujui hasil", reverse("findings:persetujuan", args=[a.pk])
+    if auditee and a.status == S.FINAL:
+        return "Isi rencana PTK", reverse("findings:ptk", args=[a.pk])
+    return None
 
 
 def _periode_terpilih(request):

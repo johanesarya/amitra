@@ -2,24 +2,25 @@
      {% if masih_diproses %}hx-get="{% url 'ekspor:daftar' %}" hx-trigger="every 3s" hx-swap="outerHTML"{% endif %}>
   <ul class="divide-y divide-slate-100 text-sm">
     {% for e in daftar %}
-      <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <span>
-          <span class="font-medium text-slate-900">{{ e.judul }}</span>
+      <li class="flex flex-wrap items-center gap-4 px-6 py-4">
+        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl {% if e.status == 'SIAP' %}bg-green-50 text-green-700{% elif e.status == 'GAGAL' %}bg-red-50 text-red-700{% else %}bg-amber-50 text-amber-700{% endif %}">{% include "_ikon.html" with n="unduh" %}</span>
+        <span class="min-w-0 flex-1">
+          <span class="font-semibold text-slate-900">{{ e.judul }}</span>
           <span class="block text-xs text-slate-500">{{ e.get_jenis_display }} · diminta {{ e.diminta_pada|date:"j M Y H.i" }}</span>
         </span>
-        <span aria-live="polite">
+        <span class="flex flex-wrap items-center gap-2" aria-live="polite">
           {% if e.status == "SIAP" %}
-            <a href="{% url 'ekspor:unduh' e.pk 'excel' %}" class="tombol-kedua px-3 py-1.5">Excel</a>
+            <a href="{% url 'ekspor:unduh' e.pk 'excel' %}" class="tombol-utama px-3 py-1.5">Excel</a>
             {% if e.berkas_pdf %}<a href="{% url 'ekspor:unduh' e.pk 'pdf' %}" class="tombol-kedua px-3 py-1.5">PDF</a>{% endif %}
           {% elif e.status == "GAGAL" %}
-            <span class="text-red-700">Gagal</span>{% if perms.audits.view_audit %} <span class="text-xs text-red-700">{{ e.galat|truncatechars:120 }}</span>{% endif %}
+            <span class="lencana bg-red-50 text-red-700 ring-red-600/20">Gagal</span>{% if perms.audits.view_audit %} <span class="text-xs text-red-700">{{ e.galat|truncatechars:120 }}</span>{% endif %}
           {% else %}
-            <span class="text-amber-700">{{ e.get_status_display }}…</span>
+            <span class="lencana bg-amber-50 text-amber-800 ring-amber-600/25">{{ e.get_status_display }}…</span>
           {% endif %}
         </span>
       </li>
     {% empty %}
-      <li class="px-4 py-6 text-center text-slate-600">Belum ada unduhan.</li>
+      <li class="px-6 py-10 text-center text-slate-600">Belum ada unduhan.</li>
     {% endfor %}
   </ul>
 </div>

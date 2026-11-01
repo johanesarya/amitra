@@ -2,13 +2,15 @@
 
 {% block head_title %}Koreksi nomor surat{% endblock head_title %}
 
+{% block remah %}<li class="remah">Koreksi nomor surat</li>{% endblock remah %}
+
 {% block content %}
   <div class="kartu mx-auto max-w-lg space-y-4">
     <h1 class="text-xl font-bold text-slate-900">Koreksi nomor surat</h1>
     <p class="text-sm text-slate-700">{{ nomor.get_jenis_display }}{% if nomor.ptk %} {{ nomor.ptk.kode }}{% endif %} · {{ audit.unit }}</p>
     <form method="post" class="space-y-4">
       {% csrf_token %}
-      {% for e in form.non_field_errors %}<p class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ e }}</p>{% endfor %}
+      {% for e in form.non_field_errors %}<p class="kotak-galat" role="alert">{{ e }}</p>{% endfor %}
       {% for field in form %}
         <div>
           <label for="{{ field.id_for_label }}" class="label">{{ field.label }}</label>

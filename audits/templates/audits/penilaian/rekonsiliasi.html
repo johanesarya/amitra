@@ -1,29 +1,44 @@
 {% extends "base.html" %}
+{% load siami %}
 
 {% block head_title %}Rekonsiliasi {{ audit.unit }}{% endblock head_title %}
+{% block remah %}
+  <li class="remah"><a href="{% url 'audits:detail' audit.pk %}" class="hover:text-slate-800">{{ audit.unit }}</a></li>
+  <li class="remah">Rekonsiliasi</li>
+{% endblock remah %}
 
 {% block content %}
-  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
-  <h1 class="mt-2 text-2xl font-bold text-slate-900">Rekonsiliasi: butir tanpa kategori terbanyak</h1>
-  <p class="mt-1 text-sm text-slate-600">
-    Penilaian auditor pada butir berikut tidak memiliki satu kategori terbanyak (BR-13). Ketua menetapkan kategorinya
-    dengan alasan; setelah semua ditetapkan, sistem menghitung nilai efektif dan memutuskan perlu tidaknya Audit Lapangan.
-  </p>
+  <div class="space-y-6">
+    {% stepper audit %}
 
-  <div class="mt-6 space-y-4">
+    <section class="kartu flex flex-wrap items-start justify-between gap-4">
+      <div class="max-w-3xl space-y-1">
+        <span class="lencana {{ audit.status|kelas_status }}">{{ audit.get_status_display }}</span>
+        <h1 class="text-2xl font-bold text-slate-900">Rekonsiliasi: butir tanpa kategori terbanyak</h1>
+        <p class="text-sm text-slate-600">
+          Penilaian auditor pada butir berikut tidak memiliki satu kategori terbanyak (BR-13). Ketua menetapkan kategorinya
+          dengan alasan; setelah semua ditetapkan, sistem menghitung nilai efektif dan memutuskan perlu tidaknya Audit Lapangan.
+        </p>
+      </div>
+      <a href="{% url 'audits:perbedaan' audit.pk %}" class="tombol-kedua">{% include "_ikon.html" with n="timbangan" k="size-4" %}Tabel perbedaan</a>
+    </section>
+
     {% for r in baris_seri %}
-      <section class="kartu space-y-3" aria-labelledby="seri-{{ r.butir.pk }}">
-        <h2 id="seri-{{ r.butir.pk }}" class="font-semibold text-slate-900">{{ r.butir.kode }} {{ r.butir.pernyataan }}</h2>
+      <section class="kartu space-y-4 border-amber-300" aria-labelledby="seri-{{ r.butir.pk }}">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <h2 id="seri-{{ r.butir.pk }}" class="font-semibold text-slate-900">{{ r.butir.kode }} {{ r.butir.pernyataan }}</h2>
+          <span class="lencana bg-amber-100 text-amber-900 ring-amber-500/30">Seri</span>
+        </div>
         <ul class="grid gap-3 text-sm sm:grid-cols-3">
           {% for a, p in r.penilaian %}
-            <li class="rounded-md border border-slate-200 p-3">
-              <p class="text-xs text-slate-500">{{ a.pengguna }}</p>
+            <li class="rounded-xl border border-slate-200 p-4">
+              <p class="mb-2 text-xs font-medium text-slate-500">{{ a.pengguna }}{% if a.ketua %} (ketua){% endif %}</p>
               {% include "audits/penilaian/_sel_penilaian.html" %}
             </li>
           {% endfor %}
         </ul>
         {% if adalah_ketua %}
-          <form method="post" class="grid gap-3 sm:grid-cols-[14rem_1fr_auto] sm:items-end">
+          <form method="post" class="grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-[14rem_1fr_auto] sm:items-end">
             {% csrf_token %}
             <input type="hidden" name="pernyataan" value="{{ r.butir.pk }}">
             <label class="block">
@@ -42,7 +57,10 @@
         {% endif %}
       </section>
     {% empty %}
-      <p class="kartu text-sm text-slate-600">Tidak ada butir seri.</p>
+      <div class="kartu py-10 text-center">
+        <span class="mx-auto flex size-12 items-center justify-center rounded-full bg-green-50 text-green-700">{% include "_ikon.html" with n="centang" k="size-6" %}</span>
+        <p class="mt-3 text-sm text-slate-600">Tidak ada butir seri.</p>
+      </div>
     {% endfor %}
   </div>
 {% endblock content %}

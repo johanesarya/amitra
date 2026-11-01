@@ -1,5 +1,7 @@
 """Halaman SER auditee (FR-18 s.d. FR-23). Akses diperiksa per penugasan (NFR-08)."""
 
+from collections import Counter
+
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
@@ -13,7 +15,7 @@ from django.views.decorators.http import require_POST
 
 from . import ser
 from .akses import IZIN_LIHAT_SEMUA, ambil_audit
-from .models import Audit, Bukti, Penugasan
+from .models import Audit, Bukti, Kategori, Penugasan, pilihan_kategori
 
 
 def _akses(request, pk, ubah=False):
@@ -58,7 +60,7 @@ def ser_halaman(request, pk):
         "pk": aktif[0].pk,
         "url": reverse("audits:ser_simpan", args=[audit.pk, aktif[0].pk]),
         "csrf": get_token(request),
-        "data": {"penjelasan": jawaban.penjelasan if jawaban else ""},
+        "data": {"kategori": jawaban.kategori if jawaban else "", "penjelasan": jawaban.penjelasan if jawaban else ""},
         "versi": jawaban.versi if jawaban else 0,
         "waktu": _waktu(jawaban.diubah_pada) if jawaban and jawaban.diubah_oleh_id else "",
     }
@@ -77,6 +79,7 @@ def ser_halaman(request, pk):
             "bisa_ubah": bisa_ubah,
             "adalah_auditee": adalah_auditee,
             "jumlah_lengkap": sum(1 for _, j in butir if j is not None and j.lengkap),
+            "kategori_pilihan": pilihan_kategori(),
             "konfig": konfig,
             **_ptk_lalu(audit, aktif[0].pk, None),
         },
@@ -93,14 +96,17 @@ def ser_simpan(request, pk, pernyataan_pk):
     except ValueError:
         return JsonResponse({"pesan": "Versi isian tidak valid. Muat ulang halaman."}, status=400)
     try:
-        jawaban = ser.simpan_penjelasan(audit, pernyataan_pk, request.POST.get("penjelasan", ""), versi, request.user)
+        jawaban = ser.simpan_isian(
+            audit, pernyataan_pk, request.POST.get("penjelasan", ""), versi, request.user,
+            kategori=request.POST.get("kategori", ""),
+        )
     except ser.KonflikVersi as e:
         j = e.jawaban
         return JsonResponse(
             {
                 "pesan": str(e),
                 "versi": j.versi,
-                "data": {"penjelasan": j.penjelasan},
+                "data": {"penjelasan": j.penjelasan, "kategori": j.kategori},
                 "oleh": str(j.diubah_oleh or ""),
                 "waktu": _waktu(j.diubah_pada),
             },
@@ -191,10 +197,20 @@ def ser_kirim(request, pk):
         else:
             messages.success(request, "SER berhasil dikirim dan kini terkunci. Auditor akan mulai menilai.")
             return redirect("audits:detail", audit.pk)
+    ringkasan = ser.ringkasan(audit)
+    kurang = {p.pk: k for p, k in ringkasan.belum_lengkap}
+    butir = [(p, j, kurang.get(p.pk, [])) for p, j in ser.butir_ser(audit)]
+    hitung = Counter(j.kategori for _, j, _ in butir if j is not None and j.kategori)
     return render(
         request,
         "audits/ser/kirim.html",
-        {"audit": audit, "ringkasan": ser.ringkasan(audit), "bisa_ubah": audit.ser_bisa_diisi()},
+        {
+            "audit": audit,
+            "ringkasan": ringkasan,
+            "bisa_ubah": audit.ser_bisa_diisi(),
+            "butir": butir,
+            "per_kategori": [(v, label, hitung[v]) for v, label in Kategori.choices],
+        },
     )
 
 

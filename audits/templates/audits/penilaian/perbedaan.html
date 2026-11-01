@@ -1,44 +1,104 @@
 {% extends "base.html" %}
+{% load siami %}
 
 {% block head_title %}Tabel perbedaan {{ audit.unit }}{% endblock head_title %}
+{% block remah %}
+  <li class="remah"><a href="{% url 'audits:detail' audit.pk %}" class="hover:text-slate-800">{{ audit.unit }}</a></li>
+  <li class="remah">Tabel perbedaan</li>
+{% endblock remah %}
 
 {% block content %}
-  <p class="text-sm"><a href="{% url 'audits:detail' audit.pk %}" class="text-blue-800 underline-offset-4 hover:underline">← {{ audit.unit }}</a></p>
-  <h1 class="mt-2 text-2xl font-bold text-slate-900">Tabel perbedaan penilaian</h1>
-  <p class="mt-1 text-sm text-slate-600">
-    {{ audit.unit }} · {{ audit.periode }}. Baris berwarna kuning adalah butir penyumbang deviasi (penilaian berbeda antar-auditor).
-  </p>
+  <div class="space-y-6">
+    {% stepper audit %}
 
-  <div class="kartu mt-6 overflow-x-auto p-0">
-    <table class="w-full min-w-[900px] text-left text-sm">
-      <thead class="border-b border-slate-200 bg-slate-50 text-slate-700">
-        <tr>
-          <th scope="col" class="w-64 px-3 py-2 font-semibold">Butir</th>
-          {% for a in auditor %}
-            <th scope="col" class="px-3 py-2 font-semibold">{{ a.pengguna }}{% if a.ketua %} <span class="text-xs font-normal">(ketua)</span>{% endif %}</th>
-          {% endfor %}
-          <th scope="col" class="px-3 py-2 font-semibold">Kategori final</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100">
-        {% for r in baris %}
-          <tr class="align-top {% if r.tidak_berlaku %}bg-slate-50 text-slate-500{% elif r.berbeda %}bg-amber-50{% endif %}">
-            <th scope="row" class="px-3 py-2 font-normal">
-              <span class="font-semibold">{{ r.butir.kode }}</span> {{ r.butir.pernyataan|truncatechars:90 }}
-              {% if r.berbeda and not r.tidak_berlaku %}<span class="mt-1 block text-xs font-medium text-amber-800">Berbeda</span>{% endif %}
-            </th>
-            {% for a, p in r.penilaian %}
-              <td class="px-3 py-2">{% if r.tidak_berlaku %}—{% else %}{% include "audits/penilaian/_sel_penilaian.html" %}{% endif %}</td>
-            {% endfor %}
-            <td class="px-3 py-2">
-              {% if r.tidak_berlaku %}Tidak berlaku
-              {% elif r.final.kategori %}{{ r.final.get_kategori_display }}<span class="block text-xs text-slate-500">{{ r.final.get_cara_display }}</span>
-              {% elif r.final %}<span class="font-medium text-red-700">Seri — menunggu ketua</span>
-              {% else %}—{% endif %}
-            </td>
-          </tr>
+    <section class="kartu flex flex-wrap items-start justify-between gap-4">
+      <div class="space-y-1">
+        <span class="lencana {{ audit.status|kelas_status }}">{{ audit.get_status_display }}</span>
+        <h1 class="text-2xl font-bold text-slate-900">Tabel perbedaan penilaian</h1>
+        <p class="text-sm text-slate-600">{{ audit.unit }} · {{ audit.periode }}</p>
+      </div>
+      <ul class="flex flex-wrap gap-2 text-sm" aria-label="Tim auditor">
+        {% for a in auditor %}
+          <li class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5">
+            <span class="flex size-7 items-center justify-center rounded-full {% if a.ketua %}bg-primer-700 text-white{% else %}bg-slate-100 text-slate-700{% endif %} text-xs font-semibold">{{ forloop.counter }}</span>
+            <span class="leading-tight">{{ a.pengguna }}<span class="block text-xs text-slate-500">{% if a.ketua %}Ketua auditor{% else %}Anggota{% endif %}</span></span>
+          </li>
         {% endfor %}
-      </tbody>
-    </table>
+      </ul>
+    </section>
+
+    <dl class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div class="kartu flex flex-col gap-1 p-5"><dt class="text-sm text-slate-600">Total butir</dt><dd class="text-3xl font-bold text-slate-900">{{ ringkasan.total }}</dd></div>
+      <div class="kartu flex flex-col gap-1 p-5"><dt class="text-sm text-slate-600">Penilaian sama</dt><dd class="text-3xl font-bold text-green-700">{{ ringkasan.sama }}</dd></div>
+      <div class="kartu flex flex-col gap-1 p-5"><dt class="text-sm text-slate-600">Berbeda <span class="block text-xs text-slate-500">{{ ringkasan.seri }} seri menunggu ketua</span></dt><dd class="text-3xl font-bold text-amber-700">{{ ringkasan.berbeda }}</dd></div>
+      <div class="kartu flex flex-col gap-1 p-5"><dt class="text-sm text-slate-600">Tidak berlaku</dt><dd class="text-3xl font-bold text-slate-500">{{ ringkasan.tidak_berlaku }}</dd></div>
+    </dl>
+
+    <section class="kartu overflow-x-auto p-0" aria-labelledby="judul-matriks">
+      <div class="flex flex-wrap items-end justify-between gap-3 px-6 pt-5 pb-3">
+        <div>
+          <h2 id="judul-matriks" class="text-lg font-semibold text-slate-900">Matriks penilaian per butir</h2>
+          <p class="text-sm text-slate-600">Baris berwarna kuning adalah butir penyumbang deviasi (penilaian berbeda antar-auditor). Kolom auditee hanya pembanding dan tidak dihitung.</p>
+        </div>
+      </div>
+      <table class="w-full min-w-[960px] text-left text-sm">
+        <thead class="kepala-tabel">
+          <tr>
+            <th scope="col" class="w-64 px-6 py-3">Butir</th>
+            <th scope="col" class="bg-slate-100 px-3 py-3">Auditee <span class="block font-normal normal-case">(evaluasi diri)</span></th>
+            {% for a in auditor %}
+              <th scope="col" class="px-3 py-3">{{ a.pengguna }}{% if a.ketua %} <span class="block font-normal normal-case">(ketua)</span>{% endif %}</th>
+            {% endfor %}
+            <th scope="col" class="px-3 py-3">Kategori final</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for r in baris %}
+            <tr class="align-top {% if r.tidak_berlaku %}bg-slate-50 text-slate-500{% elif r.berbeda %}bg-amber-50{% endif %}">
+              <th scope="row" class="px-6 py-3 font-normal">
+                <span class="font-semibold text-slate-900">{{ r.butir.kode }}</span> {{ r.butir.pernyataan|truncatechars:90 }}
+                {% if r.berbeda and not r.tidak_berlaku %}<span class="lencana mt-1.5 bg-amber-100 text-amber-900 ring-amber-500/30">Berbeda</span>{% endif %}
+              </th>
+              <td class="bg-slate-50/80 px-3 py-3">{% if r.kategori_auditee %}<span class="lencana {{ r.kategori_auditee|kelas_kategori }}">{{ r.label_auditee }}</span>{% else %}—{% endif %}</td>
+              {% for a, p in r.penilaian %}
+                <td class="px-3 py-3">{% if r.tidak_berlaku %}—{% else %}{% include "audits/penilaian/_sel_penilaian.html" %}{% endif %}</td>
+              {% endfor %}
+              <td class="px-3 py-3">
+                {% if r.tidak_berlaku %}Tidak berlaku
+                {% elif r.final.kategori %}<span class="lencana {{ r.final.kategori|kelas_kategori }}">{{ r.final.get_kategori_display }}</span><span class="mt-1 block text-xs text-slate-500">{{ r.final.get_cara_display }}</span>
+                {% elif r.final %}<span class="font-medium text-red-700">Seri — menunggu ketua</span>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if ringkasan.seri %}
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-4 text-sm">
+          <p class="text-slate-600">{{ ringkasan.seri }} butir tanpa kategori terbanyak perlu ditetapkan ketua auditor.</p>
+          <a href="{% url 'audits:rekonsiliasi' audit.pk %}" class="tombol-utama">{% if adalah_ketua %}Buka rekonsiliasi{% else %}Lihat rekonsiliasi{% endif %} {% include "_ikon.html" with n="kanan" k="size-4" %}</a>
+        </div>
+      {% endif %}
+    </section>
+
+    {% if hasil %}
+      <section class="kartu space-y-4" aria-labelledby="judul-hasil">
+        <h2 id="judul-hasil" class="text-lg font-semibold text-slate-900">Hasil perhitungan awal</h2>
+        <dl class="grid gap-4 md:grid-cols-3">
+          <div class="flex flex-col gap-1 rounded-xl border border-slate-200 p-4">
+            <dt class="text-sm text-slate-600">Nilai efektif (NE) <span class="block text-xs {% if hasil.memenuhi_kkm %}text-green-700{% else %}text-red-700{% endif %}">{% if hasil.memenuhi_kkm %}Memenuhi KKM{% else %}Belum Memenuhi KKM{% endif %} ({{ hasil.parameter.kkm }})</span></dt>
+            <dd class="text-3xl font-bold text-slate-900">{{ hasil.ne }}</dd>
+          </div>
+          <div class="flex flex-col gap-1 rounded-xl border p-4 {% if hasil.deviasi_tinggi %}border-amber-300 bg-amber-50{% else %}border-slate-200{% endif %}">
+            <dt class="text-sm text-slate-600">Deviasi (D) <span class="block text-xs">Ambang {{ hasil.parameter.ambang_deviasi }}{% if hasil.deviasi_tinggi %} · di atas ambang{% endif %}</span></dt>
+            <dd class="text-3xl font-bold {% if hasil.deviasi_tinggi %}text-amber-700{% else %}text-slate-900{% endif %}">{{ hasil.deviasi }}</dd>
+          </div>
+          <div class="flex flex-col gap-1 rounded-xl border border-slate-200 p-4">
+            <dt class="text-sm text-slate-600">Keputusan sistem</dt>
+            <dd class="text-base font-semibold text-slate-900">{% if hasil.perlu_audit_lapangan %}Perlu Audit Lapangan{% else %}Lanjut ke Perumusan Temuan{% endif %}</dd>
+          </div>
+        </dl>
+      </section>
+    {% endif %}
   </div>
 {% endblock content %}

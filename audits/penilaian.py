@@ -445,6 +445,7 @@ def tabel_perbedaan(audit):
     auditor = tim_auditor(audit)
     final = {k.pernyataan_id: k for k in audit.kategori_final.all()}
     semua = {(p.pernyataan_id, p.auditor_id): p for p in audit.penilaian.all()}
+    auditee = dict(audit.jawaban_ser.values_list("pernyataan_id", "kategori"))
     baris = []
     for b in audit.pernyataan_berlaku():
         sel = [semua.get((b.pk, a.pengguna_id)) for a in auditor]
@@ -452,6 +453,9 @@ def tabel_perbedaan(audit):
         k = final.get(b.pk)
         baris.append({
             "butir": b,
+            # BR-01 (revisi 31 Okt 2026): pembanding saja, tidak ikut menentukan "berbeda".
+            "kategori_auditee": auditee.get(b.pk, ""),
+            "label_auditee": Penilaian.Kategori(auditee[b.pk]).label if auditee.get(b.pk) else "",
             "penilaian": list(zip(auditor, sel)),  # [(penugasan, penilaian atau None)]
             "final": k,
             "tidak_berlaku": bool(k and k.tidak_berlaku),

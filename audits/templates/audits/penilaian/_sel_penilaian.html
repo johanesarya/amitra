@@ -1,5 +1,5 @@
-{% if p %}
-  <p class="font-medium text-slate-900">{{ p.get_kategori_display|default:"—" }}</p>
-  {% if p.dasar_penilaian %}<p class="mt-1 text-xs text-slate-600">{{ p.dasar_penilaian|truncatechars:160 }}</p>{% endif %}
+{% load siami %}{% if p %}
+  {% if p.kategori %}<span class="lencana {{ p.kategori|kelas_kategori }}">{{ p.get_kategori_display }}</span>{% else %}—{% endif %}
+  {% if p.dasar_penilaian %}<p class="mt-1.5 text-xs text-slate-600">{{ p.dasar_penilaian|truncatechars:160 }}</p>{% endif %}
   {% if p.kondisi_faktual %}<p class="mt-1 text-xs text-slate-600"><span class="font-medium">Kondisi:</span> {{ p.kondisi_faktual|truncatechars:160 }}</p>{% endif %}
 {% else %}—{% endif %}

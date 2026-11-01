@@ -28,7 +28,7 @@ def audit(tim, admin_lpm, standar, auditee):
     audit = simpan_audit(**tim, oleh=admin_lpm)
     ser.pastikan_jawaban(audit)
     for b in audit.pernyataan_berlaku():
-        ser.simpan_penjelasan(audit, b.pk, f"Penjelasan {b.kode}", 1, auditee)
+        ser.simpan_isian(audit, b.pk, f"Penjelasan {b.kode}", 1, auditee, kategori="SESUAI")
         ser.tambah_tautan(audit, b.pk, "https://drive.google.com/file/d/x/view", auditee)
     ser.kirim(audit, auditee)
     audit.refresh_from_db()
@@ -223,6 +223,25 @@ def test_auditor_belum_mengunci_tidak_melihat_skor_lain(client, audit, tim_audit
     assert resp.context["lihat_lain"] is False and list(resp.context["penilaian_lain"]) == []
     assert "Dasar 1.1" not in resp.content.decode()
     assert client.get(reverse("audits:perbedaan", args=[audit.pk])).status_code == 403
+
+
+def test_auditor_melihat_kategori_auditee_sejak_awal(client, audit, tim_auditor, butir):
+    # BR-01 (revisi 31 Okt 2026): auditor mencocokkan pilihan auditee dengan bukti sebelum menilai.
+    client.force_login(tim_auditor[2].pengguna)
+    resp = client.get(reverse("audits:penilaian", args=[audit.pk]) + f"?butir={butir[0].pk}")
+    assert resp.status_code == 200
+    isi_halaman = resp.content.decode()
+    assert "Kategori pilihan auditee" in isi_halaman and "Sesuai" in isi_halaman
+
+
+def test_kategori_auditee_tidak_memengaruhi_nilai(audit, tim_auditor, butir):
+    # Bab 6: N, D, NE hanya dari penilaian auditor.
+    for t in tim_auditor:
+        isi(audit, t, [3, 3, 3, 3], butir)
+    sebelum = layanan.hitung(segarkan(audit), HasilPerhitungan.Tahap.AWAL)
+    audit.jawaban_ser.update(kategori="KTS")
+    sesudah = layanan.hitung(segarkan(audit), HasilPerhitungan.Tahap.AWAL)
+    assert (sesudah.rata_rata, sesudah.deviasi, sesudah.ne) == (sebelum.rata_rata, sebelum.deviasi, sebelum.ne)
 
 
 def test_ketua_juga_baru_melihat_setelah_mengunci(client, audit, tim_auditor, butir):

@@ -1,57 +1,99 @@
 {% extends "base.html" %}
+{% load siami %}
 
 {% block head_title %}Tugas Saya{% endblock head_title %}
+{% block remah %}<li class="remah">Tugas Saya</li>{% endblock remah %}
 
 {% block content %}
-  <h1 class="text-2xl font-bold text-slate-900">Tugas Saya</h1>
-  <p class="mt-1 text-sm text-slate-600">Selamat datang, {{ user.get_short_name }}.</p>
-
-  {% if punya_hasil_final %}
-    <p class="mt-4 flex flex-wrap gap-4 text-sm">
-      <a href="{% url 'audits:riwayat' %}" class="text-blue-800 underline">Riwayat AMI unit</a>
-      <a href="{% url 'analitik:beranda' %}" class="text-blue-800 underline">Rapor dan tren unit Anda</a>
-    </p>
-  {% endif %}
-  <section class="mt-6 space-y-3" aria-labelledby="judul-tugas">
-    <h2 id="judul-tugas" class="text-lg font-semibold text-slate-900">Audit yang ditugaskan</h2>
-    {% for p in daftar_penugasan %}
-      <article class="kartu flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p class="font-semibold text-slate-900">{{ p.audit.unit }}</p>
-          <p class="text-sm text-slate-600">
-            {{ p.audit.periode }} ·
-            <span class="font-medium">{% if p.ketua %}Ketua auditor{% else %}{{ p.get_peran_display }}{% endif %}</span> ·
-            {{ p.audit.get_status_display }}
-          </p>
-          {% if p.tenggat %}
-            <p class="mt-1 text-sm {% if p.tenggat.sisa < 0 %}font-medium text-red-700{% elif p.tenggat.sisa <= 3 %}font-medium text-amber-700{% else %}text-slate-600{% endif %}">
-              Tenggat {{ p.tenggat.label|lower }}: {{ p.tenggat.batas|date:"j F Y" }}
-              ({% if p.tenggat.sisa < 0 %}lewat {{ p.tenggat.sisa|stringformat:"d"|slice:"1:" }} hari{% else %}{{ p.tenggat.keterangan_sisa }}{% endif %})
-            </p>
-          {% endif %}
+  <div x-data="{ tab: 'semua' }">
+    <section class="kartu flex flex-wrap items-center justify-between gap-6" aria-labelledby="judul-tugas-saya">
+      <div class="min-w-0">
+        <p class="judul-kecil">Soegijapranata Catholic University</p>
+        <h1 id="judul-tugas-saya" class="mt-1 text-2xl font-bold text-slate-900">Selamat datang, {{ user.get_short_name|default:user.get_full_name }}</h1>
+        <p class="mt-1 text-sm text-slate-600">Tugas Saya · {{ user.get_peran_display }}</p>
+      </div>
+      <dl class="flex flex-wrap gap-3">
+        <div class="flex items-center gap-3 rounded-xl bg-primer-50 px-4 py-3">
+          <span class="text-primer-700">{% include "_ikon.html" with n="tugas" %}</span>
+          <div class="flex flex-col-reverse"><dt class="text-xs text-slate-600">Total tugas</dt><dd class="text-xl font-bold text-slate-900">{{ daftar_penugasan|length }}</dd></div>
         </div>
-        {% if p.peran == "AUDITEE" and p.audit.ser_bisa_diisi %}
-          <a href="{% url 'audits:ser' p.audit.pk %}" class="tombol-utama">Isi SER</a>
-        {% elif p.peran == "AUDITOR" and p.audit.status == "PENILAIAN_AUDITOR" and not p.dikunci_pada %}
-          <a href="{% url 'audits:penilaian' p.audit.pk %}" class="tombol-utama">Nilai SER</a>
-        {% elif p.ketua and p.audit.status == "REKONSILIASI" %}
-          <a href="{% url 'audits:rekonsiliasi' p.audit.pk %}" class="tombol-utama">Rekonsiliasi</a>
-        {% elif p.ketua and p.audit.status == "PERLU_AUDIT_LAPANGAN" %}
-          <a href="{% url 'audits:audit_lapangan' p.audit.pk %}" class="tombol-utama">Audit Lapangan</a>
-        {% elif p.peran == "AUDITOR" and p.audit.revisi_al_dibuka and not p.dikunci_pada %}
-          <a href="{% url 'audits:penilaian' p.audit.pk %}" class="tombol-utama">Revisi penilaian</a>
-        {% elif p.ketua and p.audit.status == "PERUMUSAN_TEMUAN" %}
-          <a href="{% url 'findings:perumusan' p.audit.pk %}" class="tombol-utama">Rumuskan temuan</a>
-        {% elif p.peran == "AUDITEE" and p.audit.status == "MENUNGGU_PERSETUJUAN" %}
-          <a href="{% url 'findings:persetujuan' p.audit.pk %}" class="tombol-utama">Tinjau dan setujui hasil</a>
-        {% elif p.peran == "AUDITEE" and p.audit.status == "FINAL" %}
-          <a href="{% url 'findings:ptk' p.audit.pk %}" class="tombol-utama">Isi rencana PTK</a>
-        {% else %}
-          <a href="{% url 'audits:detail' p.audit.pk %}" class="tombol-utama">Lihat audit</a>
+        <div class="flex items-center gap-3 rounded-xl bg-aksen-50 px-4 py-3">
+          <span class="text-amber-700">{% include "_ikon.html" with n="peringatan" %}</span>
+          <div class="flex flex-col-reverse"><dt class="text-xs text-slate-600">Perlu tindakan</dt><dd class="text-xl font-bold text-amber-800">{{ perlu_tindakan }}</dd></div>
+        </div>
+      </dl>
+    </section>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[1fr_18rem]">
+      <section class="space-y-4" aria-labelledby="judul-tugas">
+        <h2 id="judul-tugas" class="sr-only">Audit yang ditugaskan</h2>
+        {% if daftar_penugasan %}
+          <div class="inline-flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1 text-sm" role="tablist" aria-label="Saring tugas">
+            <button type="button" role="tab" class="rounded-lg px-3 py-1.5 font-medium" :class="tab === 'semua' ? 'bg-white text-primer-800 shadow-sm' : 'text-slate-600'" :aria-selected="tab === 'semua'" @click="tab = 'semua'">Semua tugas <span class="lencana ml-1 bg-primer-700 text-white ring-primer-700">{{ daftar_penugasan|length }}</span></button>
+            <button type="button" role="tab" class="rounded-lg px-3 py-1.5 font-medium" :class="tab === 'AUDITEE' ? 'bg-white text-primer-800 shadow-sm' : 'text-slate-600'" :aria-selected="tab === 'AUDITEE'" @click="tab = 'AUDITEE'">Sebagai auditee</button>
+            <button type="button" role="tab" class="rounded-lg px-3 py-1.5 font-medium" :class="tab === 'AUDITOR' ? 'bg-white text-primer-800 shadow-sm' : 'text-slate-600'" :aria-selected="tab === 'AUDITOR'" @click="tab = 'AUDITOR'">Sebagai auditor</button>
+          </div>
         {% endif %}
-      </article>
-    {% empty %}
-      <p class="kartu text-sm text-slate-600">Belum ada audit yang ditugaskan kepada Anda.</p>
-    {% endfor %}
-  </section>
+
+        {% for p in daftar_penugasan %}
+          <article class="kartu space-y-4 {% if p.aksi %}border-aksen-400 ring-1 ring-aksen-400/40{% endif %}" x-show="tab === 'semua' || tab === '{{ p.peran }}'">
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+              <p class="flex flex-wrap items-center gap-2">
+                <span>{{ p.audit.periode }}</span>
+                <span class="lencana bg-primer-50 text-primer-700 ring-primer-600/20">{% if p.ketua %}Ketua auditor{% else %}{{ p.get_peran_display }}{% endif %}</span>
+                <span class="lencana {{ p.audit.status|kelas_status }}">{{ p.audit.get_status_display }}</span>
+              </p>
+              {% if p.tenggat %}
+                <span class="lencana {% if p.tenggat.sisa < 0 or p.tenggat.sisa <= 3 %}bg-red-50 text-red-700 ring-red-600/20{% else %}bg-slate-50 text-slate-600 ring-slate-500/20{% endif %}">
+                  {% include "_ikon.html" with n="riwayat" k="size-3.5" %}
+                  {% if p.tenggat.sisa < 0 %}Lewat {{ p.tenggat.sisa|stringformat:"d"|slice:"1:" }} hari{% else %}{{ p.tenggat.keterangan_sisa|capfirst }}{% endif %}
+                </span>
+              {% endif %}
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-slate-900">{{ p.audit.unit }}</h3>
+              {% if p.audit.unit.induk %}<p class="text-sm text-slate-500">{{ p.audit.unit.induk }}</p>{% endif %}
+            </div>
+            {% if p.tenggat %}
+              <p class="flex items-center gap-2 rounded-lg bg-slate-50 px-4 py-3 text-sm {% if p.tenggat.sisa < 0 %}font-medium text-red-700{% elif p.tenggat.sisa <= 3 %}font-medium text-amber-700{% else %}text-slate-600{% endif %}">
+                {% include "_ikon.html" with n="kalender" k="size-4" %}
+                <span>Tenggat {{ p.tenggat.label|lower }}: {{ p.tenggat.batas|date:"j F Y" }}
+                  ({% if p.tenggat.sisa < 0 %}lewat {{ p.tenggat.sisa|stringformat:"d"|slice:"1:" }} hari{% else %}{{ p.tenggat.keterangan_sisa }}{% endif %})</span>
+              </p>
+            {% endif %}
+            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+              <a href="{% url 'audits:detail' p.audit.pk %}" class="tautan text-sm">Detail audit</a>
+              {% if p.aksi %}
+                <a href="{{ p.aksi.1 }}" class="tombol-utama">{{ p.aksi.0 }} {% include "_ikon.html" with n="kanan" k="size-4" %}</a>
+              {% else %}
+                <a href="{% url 'audits:detail' p.audit.pk %}" class="tombol-kedua">Lihat audit</a>
+              {% endif %}
+            </div>
+          </article>
+        {% empty %}
+          <div class="kartu py-12 text-center">
+            <span class="mx-auto flex size-12 items-center justify-center rounded-full bg-primer-50 text-primer-700">{% include "_ikon.html" with n="tugas" k="size-6" %}</span>
+            <p class="mt-3 font-semibold text-slate-900">Belum ada audit yang ditugaskan kepada Anda.</p>
+            <p class="mt-1 text-sm text-slate-600">Tugas akan muncul di sini setelah LPM memplot audit.</p>
+          </div>
+        {% endfor %}
+      </section>
+
+      <aside class="space-y-4">
+        {% if punya_hasil_final %}
+          <section class="kartu space-y-3 p-5" aria-labelledby="judul-unit">
+            <h2 id="judul-unit" class="flex items-center gap-2 font-semibold text-slate-900">{% include "_ikon.html" with n="riwayat" %}Unit Anda</h2>
+            <ul class="space-y-2 text-sm">
+              <li><a href="{% url 'audits:riwayat' %}" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50">Riwayat AMI unit {% include "_ikon.html" with n="kanan" k="size-4" %}</a></li>
+              <li><a href="{% url 'analitik:beranda' %}" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50">Rapor dan tren unit Anda {% include "_ikon.html" with n="kanan" k="size-4" %}</a></li>
+            </ul>
+          </section>
+        {% endif %}
+        <section class="kartu space-y-2 p-5 text-sm" aria-labelledby="judul-bantuan">
+          <h2 id="judul-bantuan" class="flex items-center gap-2 font-semibold text-slate-900">{% include "_ikon.html" with n="info" %}Bantuan LPM</h2>
+          <p class="text-slate-600">Pertanyaan tentang penugasan, tenggat, atau hak akses dapat diajukan ke Admin LPM.</p>
+        </section>
+      </aside>
+    </div>
+  </div>
 {% endblock content %}

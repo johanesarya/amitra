@@ -1,5 +1,6 @@
 """Nomor surat, dokumen PDF di antrean, unduhan, dan scan: FR-39 s.d. FR-43, BR-15, BR-16, NFR-03, NFR-08."""
 
+import io
 from datetime import date
 from unittest import mock
 
@@ -232,6 +233,24 @@ def test_semua_template_dapat_dirender(audit, ketua, penugasan_auditee, pola_umu
     assert 'content: "064-00/Unika/LPM/R-Q"' in isi  # nomor formulir di kaki halaman
     if jenis in (JenisDokumen.PTK, JenisDokumen.LAPORAN_AMI):
         assert d.nomor_aktif().teks in isi
+
+
+def test_daftar_tilik_memuat_kategori_auditee(audit, ketua, penugasan_auditee):
+    # BR-01 (revisi 31 Okt 2026): pilihan auditee tampil di samping penilaian auditor.
+    from openpyxl import load_workbook
+
+    from documents.konteks import excel_daftar_tilik
+
+    audit = jadikan_final(audit, ketua, penugasan_auditee)
+    audit.jawaban_ser.update(kategori="PELAMPAUAN")
+    d = Dokumen.objects.get(audit=audit, jenis=JenisDokumen.DAFTAR_TILIK)
+    isi = render_to_string(tugas.TEMPLATE[JenisDokumen.DAFTAR_TILIK], konteks(d))
+    assert "Kategori auditee" in isi and "Pelampauan (4)" in isi
+    ws = load_workbook(io.BytesIO(excel_daftar_tilik(audit))).active
+    judul = [c.value for c in ws[3]]
+    kolom = judul.index("Kategori auditee")
+    assert judul[kolom + 1] == "Skor auditee"
+    assert (ws.cell(4, kolom + 1).value, ws.cell(4, kolom + 2).value) == ("Pelampauan", 4)
 
 
 # --- Halaman, unduhan, dan hak akses (NFR-08, Bab 4) ---------------------------------------

@@ -2,12 +2,14 @@
 
 {% block head_title %}Riwayat AMI{% endblock head_title %}
 
+{% block remah %}<li class="remah">Riwayat AMI</li>{% endblock remah %}
+
 {% block content %}
   <h1 class="text-2xl font-bold text-slate-900">Riwayat AMI unit</h1>
   <p class="mt-1 text-sm text-slate-600">Audit yang sudah Final untuk unit tempat Anda menjadi auditee (hanya-baca).</p>
   <div class="kartu mt-6 overflow-x-auto p-0">
     <table class="w-full min-w-[720px] text-left text-sm">
-      <thead class="border-b border-slate-200 bg-slate-50 text-slate-700">
+      <thead class="kepala-tabel">
         <tr><th class="px-3 py-2">Unit</th><th class="px-3 py-2">Periode</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">NE</th><th class="px-3 py-2"><span class="sr-only">Tautan</span></th></tr>
       </thead>
       <tbody class="divide-y divide-slate-100">
@@ -19,10 +21,10 @@
             <td class="px-3 py-2">{{ a.hasil_final.ne|default:"—" }}</td>
             <td class="px-3 py-2">
               <span class="flex flex-wrap gap-3">
-                <a href="{% url 'audits:ser' a.pk %}" class="text-blue-800 underline">SER</a>
-                <a href="{% url 'findings:persetujuan' a.pk %}" class="text-blue-800 underline">Hasil dan temuan</a>
-                <a href="{% url 'findings:ptk' a.pk %}" class="text-blue-800 underline">PTK</a>
-                <a href="{% url 'documents:daftar' a.pk %}" class="text-blue-800 underline">Dokumen</a>
+                <a href="{% url 'audits:ser' a.pk %}" class="tautan">SER</a>
+                <a href="{% url 'findings:persetujuan' a.pk %}" class="tautan">Hasil dan temuan</a>
+                <a href="{% url 'findings:ptk' a.pk %}" class="tautan">PTK</a>
+                <a href="{% url 'documents:daftar' a.pk %}" class="tautan">Dokumen</a>
               </span>
             </td>
           </tr>

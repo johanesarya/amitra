@@ -2,14 +2,18 @@
 
 {% block head_title %}Plot massal audit{% endblock head_title %}
 
+{% block remah %}
+  <li class="remah"><a href="{% url 'audits:daftar' %}" class="hover:text-slate-800">Plot Audit</a></li>
+  <li class="remah">Plot massal audit</li>
+{% endblock remah %}
+
 {% block content %}
-  <p class="text-sm"><a href="{% url 'audits:daftar' %}" class="text-blue-800 underline-offset-4 hover:underline">← Kembali ke Plot Audit</a></p>
-  <h1 class="mt-2 text-2xl font-bold text-slate-900">Plot massal audit dari Excel</h1>
+  <h1 class="text-2xl font-bold text-slate-900">Plot massal audit dari Excel</h1>
 
   {% if not hasil %}
     <div class="kartu mt-6 max-w-2xl space-y-4">
       <p class="text-sm text-slate-700">
-        Unduh <a href="{{ template_url }}" class="font-medium text-blue-800 underline">template plot audit</a>, isi satu baris per audit,
+        Unduh <a href="{{ template_url }}" class="tautan">template plot audit</a>, isi satu baris per audit,
         lalu unggah. Data diperiksa dengan aturan yang sama seperti formulir plot dan baru disimpan setelah Anda
         mengonfirmasi pratinjau.
       </p>
@@ -47,7 +51,7 @@
     </p>
     <div class="kartu mt-4 overflow-x-auto p-0">
       <table class="w-full min-w-[800px] text-left text-sm">
-        <thead class="border-b border-slate-200 bg-slate-50 text-slate-700">
+        <thead class="kepala-tabel">
           <tr>
             <th class="px-3 py-2">Baris</th><th class="px-3 py-2">Unit</th><th class="px-3 py-2">Auditee</th>
             <th class="px-3 py-2">Auditor</th><th class="px-3 py-2">Ketua</th><th class="px-3 py-2">Galat</th>

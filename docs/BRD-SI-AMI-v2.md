@@ -10,7 +10,7 @@ SI-AMI v2 menggantikan v1 (amitra.cloud) dengan aturan penilaian yang mengikuti 
 
 **Masalah utama v1** (dari catatan superadmin, catatan revisi klien, dan user guide v1):
 
-- Skala skor tidak sesuai: v1 memakai KTS/OB/PP/PB (0–3), sedangkan klien memakai skala 1–4 (KTS, OB, Sesuai, Pelampauan), dan auditee tidak lagi memberi skor angka.
+- Skala skor tidak sesuai: v1 memakai KTS/OB/PP/PB (0–3), sedangkan klien memakai skala 1–4 (KTS, OB, Sesuai, Pelampauan) untuk auditee dan auditor.
 - Perhitungan nilai efektif, KKM 75, rata-rata seluruh auditor, deviasi 10 poin, follow-up, dan hasil akhir setelah follow-up belum ada.
 - Plot User gagal dengan pesan "koneksi server gagal"; tim auditor tidak bisa diisi.
 - Nomor surat diisi satu set per audit, padahal PTK berjumlah lebih dari satu dan per auditee.
@@ -34,7 +34,7 @@ Rilis pertama mencakup satu siklus AMI penuh untuk semua jenis unit, termasuk PT
 - Master data: periode/jadwal, unit (fakultas, prodi S1/S2/S3/Profesi, lembaga, biro, UPT), pengguna, standar & pernyataan standar, template dokumen.
 - Standar LPM (input/impor massal oleh LPM) dan standar turunan opsional per fakultas/prodi.
 - Penugasan: 1 auditee, auditor berjumlah ganjil minimal 3 (3, 5, 7, …), 1 ketua auditor per audit.
-- Pengisian SER oleh auditee (penjelasan + tautan/unggah bukti, tanpa skor angka).
+- Pengisian SER oleh auditee (kategori evaluasi diri 1–4, penjelasan, tautan/unggah bukti).
 - Penilaian independen oleh semua auditor, perhitungan nilai efektif, deviasi, follow-up, hasil akhir.
 - Temuan (Kelebihan, KTS/OB, Peluang Peningkatan), PTK per temuan dengan nomor surat sendiri.
 - Finalisasi berbasis checklist (ketua auditor dan auditee), dokumen resmi PDF, email otomatis.
@@ -149,7 +149,7 @@ Ada 52 kebutuhan; 42 berprioritas Must dan menjadi syarat rilis. Kolom Sumber me
 | ID | Kebutuhan | Prioritas | Sumber |
 | --- | --- | --- | --- |
 | FR-18 | Daftar pernyataan standar otomatis sesuai tipe unit dan lingkup audit | Must | Revisi #5 |
-| FR-19 | Per butir: hasil/penjelasan, satu atau lebih bukti (tautan Google Drive atau unggah file), tanpa skor angka | Must | Revisi #3, 4 poin |
+| FR-19 | Per butir: kategori evaluasi diri (skala 1–4 yang sama dengan auditor), hasil/penjelasan, satu atau lebih bukti (tautan Google Drive atau unggah file) | Must | Revisi #3, 4 poin; keputusan 31 Okt 2026 |
 | FR-20 | Simpan otomatis tiap 30 detik dan saat pindah butir; indikator "tersimpan" | Must | FAQ v1 |
 | FR-21 | Tampilkan temuan KTS/OB periode lalu beserta status PTK-nya di samping butir terkait | Must | Revisi #22 |
 | FR-22 | Tombol Kirim SER dengan ringkasan butir kosong; aktif hanya jika semua butir wajib terisi | Must | Revisi #4 |
@@ -217,7 +217,7 @@ Semua angka di bab ini (skala 1–4, KKM 75, ambang deviasi 10, penyesuaian temu
 | Sesuai | 3 | Dokumen lengkap dan terimplementasi dengan baik | — |
 | Pelampauan | 4 | Dokumen dan implementasi melampaui standar | Temuan Kelebihan |
 
-- BR-01: Auditee tidak memberi skor angka; auditee hanya mengisi hasil/penjelasan dan bukti (Revisi #3).
+- BR-01: Auditee memilih kategori evaluasi diri 1–4 per butir, beserta hasil/penjelasan dan bukti. Setiap auditor yang ditugaskan melihat pilihan auditee sejak mulai menilai, mencocokkannya dengan bukti, lalu menetapkan kategorinya sendiri. Kategori auditee tidak masuk rumus Bab 6 (N, D, NE, NK, KKM), tidak menentukan butir "berbeda", dan skornya diabaikan untuk butir tidak berlaku. Kategori auditee tampil di halaman penilaian, tabel perbedaan, dan Daftar Tilik (PDF/Excel). (Keputusan 31 Okt 2026: tafsiran awal Revisi #3 "auditee tanpa skor" keliru; lihat catatan klien "4 poin".)
 - BR-02: Setiap auditor wajib mengisi kategori dan "dasar penilaian" untuk setiap butir; kondisi faktual wajib untuk KTS dan OB.
 - BR-03: Butir yang tidak berlaku bagi unit ditandai "Tidak berlaku" oleh ketua dan dikeluarkan dari pembagi.
 
@@ -437,7 +437,7 @@ Dari 22 poin revisi klien, 9 ditandai "X" di catatan (diasumsikan sudah dikerjak
 
 | Area | Kondisi v1 | Kebutuhan v2 | Tindakan |
 | --- | --- | --- | --- |
-| Skala skor | KTS/OB/PP/PB, auditee ikut memberi skor | Skala 1–4, auditee tanpa skor | Bangun ulang |
+| Skala skor | KTS/OB/PP/PB (0–3), skor auditee ikut dihitung | Skala 1–4; auditee memilih kategori sebagai evaluasi diri, tidak dihitung | Bangun ulang |
 | Tim auditor | Minimal 3, Plot User sering gagal | Ganjil minimal 3 + ketua, validasi konflik | Bangun ulang |
 | Perhitungan | Formula bebas (ekspresi), skor dan deviasi tampak sama | Rumus tetap + parameter (Bab 6) | Bangun ulang |
 | Deviasi & AL | Banner deviasi tinggi saja | Notifikasi, CP LPM, follow-up, hasil akhir | Baru |
