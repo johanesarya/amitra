@@ -158,7 +158,7 @@ def kirim_paket_final(sender, audit, **kwargs):
         )
         antre_email(
             penerima=user.email, pengguna=user, audit=audit, jenis="FINAL_PDF",
-            subjek=f"[SI-AMI] Dokumen final AMI {audit.unit} — {audit.periode}",
+            subjek=f"[AMITRA] Dokumen final AMI {audit.unit} — {audit.periode}",
             isi_teks=teks, isi_html=html, kunci=f"final:{audit.pk}:{user.pk}", lampiran=lampiran,
         )
 

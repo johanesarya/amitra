@@ -1,5 +1,5 @@
 """
-Pengaturan Django untuk SI-AMI v2.
+Pengaturan Django untuk AMITRA.
 
 Semua nilai yang berbeda antar-lingkungan (development, staging, produksi)
 dibaca dari variabel lingkungan atau file `.env` di akar proyek (NFR-15).
@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "django_q",
-    # App SI-AMI. `scoring` sengaja tidak terdaftar: isinya fungsi murni tanpa model.
+    # App AMITRA. `scoring` sengaja tidak terdaftar: isinya fungsi murni tanpa model.
     "accounts",
     "masterdata",
     "audits",
@@ -159,7 +159,7 @@ SOCIALACCOUNT_PROVIDERS = {
 # Development memakai broker ORM; produksi mengisi REDIS_URL.
 Q_CLUSTER = {
     "name": "siami",
-    "workers": int(os.environ.get("Q_WORKERS", "2")),
+    "workers": int(os.environ.get("Q_WORKERS") or 2),
     "timeout": 120,
     "retry": 180,
     "max_attempts": 3,
@@ -171,13 +171,13 @@ else:
     Q_CLUSTER["orm"] = "default"
 
 # Email: development ke console; produksi SMTP Google Workspace. Dikirim lewat antrean (notifications).
-EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND") or "django.core.mail.backends.console.EmailBackend"  # kosong = console
+EMAIL_HOST = os.environ.get("EMAIL_HOST") or "smtp.gmail.com"
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT") or 587)
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "SI-AMI LPM <no-reply@localhost>")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "AMITRA LPM <no-reply@localhost>")
 # Audit log: percayai X-Forwarded-For hanya bila aplikasi berada di belakang Nginx sendiri.
 PERCAYA_PROXY = env_bool("PERCAYA_PROXY", False)
 
@@ -200,6 +200,24 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
+# Produksi di belakang reverse proxy (Nginx/IIS/Caddy) yang menangani HTTPS. Tanpa header ini
+# Django mengira koneksi HTTP, sehingga callback Google OAuth memakai http:// dan ditolak Google.
+if PERCAYA_PROXY:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+if not DEBUG:
+    SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", True)
+    # Isi 31536000 setelah HTTPS stabil; HSTS sulit dibatalkan di browser pengguna.
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS") or 0)
+
+# Galat ke stderr agar tercatat oleh systemd (Linux) atau NSSM (Windows).
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": os.environ.get("LOG_LEVEL") or "WARNING"},
+}
+
 
 # Antarmuka berbahasa Indonesia (NFR-19).
 LANGUAGE_CODE = "id"
@@ -213,6 +231,7 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# Produksi: arahkan ke disk data yang ikut di-backup. Tidak dilayani langsung oleh web server (NFR-08).
+MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT") or BASE_DIR / "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

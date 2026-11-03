@@ -51,13 +51,22 @@ def test_database_menolak_sql_mentah(satu_log, sql):
     assert LogAudit.objects.get(pk=satu_log.pk).alasan == "uji"
 
 
+def matikan_trigger(c, tabel):
+    """Simulasi penyerang yang punya akses database; nama trigger mengikuti migrasi 0005."""
+    if connection.vendor == "postgresql":
+        c.execute(f"DROP TRIGGER {tabel}_tolak ON {tabel}")
+    else:
+        c.execute(f"DROP TRIGGER {tabel}_tolak_update")
+        c.execute(f"DROP TRIGGER {tabel}_tolak_delete")
+
+
 def test_segel_dan_periksa_mendeteksi_manipulasi(satu_log):
     jejak.catat(A.CATATAN_AUDIT, alasan="kedua")
     assert jejak.segel() == 2 and jejak.segel() == 0
     assert jejak.periksa() == []
     # Simulasi penyerang yang mematikan trigger lalu mengubah isi.
     with connection.cursor() as c:
-        c.execute("DROP TRIGGER accounts_logaudit_tolak_update")
+        matikan_trigger(c, "accounts_logaudit")
         c.execute("UPDATE accounts_logaudit SET alasan = 'dipalsukan' WHERE id = %s", [satu_log.pk])
     masalah = jejak.periksa()
     assert any(f"Log #{satu_log.pk}" in m for m in masalah)
@@ -69,8 +78,8 @@ def test_rantai_putus_bila_log_tersegel_dihapus(satu_log):
     jejak.catat(A.CATATAN_AUDIT, alasan="kedua")
     jejak.segel()
     with connection.cursor() as c:
-        c.execute("DROP TRIGGER accounts_logaudit_tolak_delete")
-        c.execute("DROP TRIGGER accounts_segellog_tolak_delete")
+        matikan_trigger(c, "accounts_logaudit")
+        matikan_trigger(c, "accounts_segellog")
         c.execute("DELETE FROM accounts_segellog WHERE log_id = %s", [satu_log.pk])
         c.execute("DELETE FROM accounts_logaudit WHERE id = %s", [satu_log.pk])
     assert any("rantai putus" in m for m in jejak.periksa())
@@ -103,6 +112,20 @@ def test_login_berhasil_gagal_dan_logout_dengan_ip(client, db):
     assert log(A.LOGIN, aktor=tamu).get().ip == "10.0.0.7"
     client.post(reverse("account_logout"))
     assert log(A.LOGOUT, aktor=tamu).exists()
+
+
+@pytest.mark.parametrize("diteruskan, ip", [
+    ("203.0.113.5", "203.0.113.5"),
+    ("203.0.113.5:51234, 10.0.0.1", "203.0.113.5"),  # IIS ARR menyertakan port klien
+    ("[2001:db8::1]:51234", "2001:db8::1"),
+    ("bukan-ip", "10.0.0.7"),  # tidak sah: pakai alamat proxy
+])
+def test_ip_dari_proxy_tanpa_port(client, db, settings, diteruskan, ip):
+    """Kolom IP bertipe inet di PostgreSQL; nilai berport tidak boleh menggagalkan login."""
+    settings.PERCAYA_PROXY = True
+    client.post(reverse("account_login"), {"login": "x@unika.ac.id", "password": "salah"},
+                REMOTE_ADDR="10.0.0.7", HTTP_X_FORWARDED_FOR=diteruskan)
+    assert log(A.LOGIN_GAGAL).get().ip == ip
 
 
 def test_login_password_akun_kampus_tercatat_gagal(client, db):

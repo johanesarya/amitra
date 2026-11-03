@@ -20,6 +20,6 @@ def kirim_undangan(user):
         raise ValueError("Undangan hanya untuk akun tamu.")
     teks, html = email_dari_template("undangan_tamu", {"pengguna": user, "tautan": tautan_tetapkan_password(user)})
     return antre_email(
-        penerima=user.email, pengguna=user, jenis="UNDANGAN_TAMU", subjek="[SI-AMI] Undangan akun tamu",
+        penerima=user.email, pengguna=user, jenis="UNDANGAN_TAMU", subjek="[AMITRA] Undangan akun tamu",
         isi_teks=teks, isi_html=html,
     )

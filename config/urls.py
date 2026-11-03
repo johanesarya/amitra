@@ -3,8 +3,8 @@ from django.urls import include, path
 
 from audits.views import beranda
 
-admin.site.site_header = "SI-AMI v2 — LPM SCU"
-admin.site.site_title = "SI-AMI v2"
+admin.site.site_header = "AMITRA — LPM SCU"
+admin.site.site_title = "AMITRA"
 admin.site.index_title = "Administrasi"
 
 urlpatterns = [

@@ -7,5 +7,5 @@ Yth. {{ pengguna.get_full_name }},
 Buka: {{ tautan }}
 {% endif %}
 --
-SI-AMI · Lembaga Penjaminan Mutu
+AMITRA · Lembaga Penjaminan Mutu
 Email ini dikirim otomatis; mohon tidak membalas.

@@ -1,4 +1,4 @@
-# Prompt Pembuatan UI SI-AMI v2
+# Prompt Pembuatan UI AMITRA
 
 Berkas ini khusus untuk **membuat tampilan baru dengan bantuan AI**. Isinya prompt siap tempel. Latar
 belakang dan aturan lengkap ada di [PANDUAN-UI-AI.md](PANDUAN-UI-AI.md).
@@ -40,7 +40,7 @@ belakang dan aturan lengkap ada di [PANDUAN-UI-AI.md](PANDUAN-UI-AI.md).
 
 ```text
 Kamu adalah desainer UI/UX senior sekaligus front-end developer. Bantu saya merancang tampilan baru
-aplikasi web "SI-AMI v2" (Sistem Informasi Audit Mutu Internal) milik Lembaga Penjaminan Mutu (LPM)
+aplikasi web "AMITRA" (Sistem Informasi Audit Mutu Internal) milik Lembaga Penjaminan Mutu (LPM)
 Soegijapranata Catholic University (SCU), Semarang.
 
 == PRODUK ==
@@ -91,7 +91,7 @@ per langkah.
   Auditee (orange), Final (green), Tindak Lanjut PTK (teal), Ditutup (slate gelap).
 - Gaya: kartu putih rounded-xl, border slate-200, shadow-sm; sudut lembut; banyak ruang kosong; tanpa
   gradasi gelap atau warna dekoratif berlebihan.
-- Kerangka: di layar ≥1024px SIDEBAR KIRI (logo S SCU + "SI-AMI" + "Lembaga Penjaminan Mutu", menu berikon:
+- Kerangka: di layar ≥1024px SIDEBAR KIRI (logo S SCU + "AMITRA" + "Lembaga Penjaminan Mutu", menu berikon:
   Tugas Saya, Dashboard, Plot Audit, Analitik, Administrasi; nama pengguna + peran dan tombol Keluar di
   bawah). Di ponsel: topbar dengan logo, lonceng notifikasi, dan tombol menu yang membuka sidebar sebagai
   laci (Alpine). Lonceng notifikasi dengan angka belum dibaca di topbar desktop juga.
@@ -125,7 +125,7 @@ Balas "Siap" lalu tunggu permintaan halaman pertama.
 ### P0 — Sistem desain dan kerangka
 
 ```text
-Buat halaman "Panduan Komponen SI-AMI" dalam satu HTML, di dalam kerangka aplikasi lengkap (sidebar desktop,
+Buat halaman "Panduan Komponen AMITRA" dalam satu HTML, di dalam kerangka aplikasi lengkap (sidebar desktop,
 topbar + laci di ponsel, lonceng notifikasi dengan angka 3, pengguna "Dosen Auditor 1 · Auditor").
 Isi halaman:
 1) palet: ungu SCU dan turunannya, kuning SCU (aksen), netral, sukses, peringatan, bahaya, info, beserta
@@ -164,8 +164,8 @@ Desktop horizontal, ponsel vertikal ringkas. Aksesibel: <ol>, aria-current="step
 ### P2 — Masuk
 
 ```text
-Rancang halaman Masuk SI-AMI tanpa sidebar. Latar slate-50 dengan aksen ungu tipis, kartu di tengah.
-Isi: logo SCU dengan teks (lampiran logo-scu-teks.png), judul "Masuk ke SI-AMI", subjudul "Sistem
+Rancang halaman Masuk AMITRA tanpa sidebar. Latar slate-50 dengan aksen ungu tipis, kartu di tengah.
+Isi: logo SCU dengan teks (lampiran logo-scu-teks.png), judul "Masuk ke AMITRA", subjudul "Sistem
 Informasi Audit Mutu Internal · Lembaga Penjaminan Mutu", teks "Gunakan akun Google dengan email kampus
 Anda", tombol utama "Masuk dengan Google" (ikon G berwarna). Di bawahnya lipatan "Masuk sebagai tamu
 (email dan password)" berisi email, password (dengan tombol tampilkan), tombol "Masuk", tautan "Lupa

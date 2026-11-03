@@ -31,7 +31,7 @@ class PenggunaManager(BaseUserManager):
 
 
 class User(AbstractUser):
-    """Pengguna SI-AMI; login dengan email kampus (FR-01).
+    """Pengguna AMITRA; login dengan email kampus (FR-01).
 
     `is_staff`, `is_active`, dan keanggotaan grup diturunkan dari `peran`
     setiap kali disimpan, jadi jangan diubah langsung.

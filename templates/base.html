@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block head_title %}SI-AMI{% endblock head_title %} · SI-AMI v2</title>
+  <title>{% block head_title %}Audit Mutu Internal{% endblock head_title %} · AMITRA</title>
   <link rel="icon" href="{% static 'img/logo-scu.svg' %}" type="image/svg+xml">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
@@ -21,7 +21,7 @@
       <div class="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
         <img src="{% static 'img/logo-scu.svg' %}" alt="" class="h-9 w-auto">
         <a href="{% url 'beranda' %}" class="min-w-0 leading-tight">
-          <span class="block text-lg font-bold text-primer-700">SI-AMI v2</span>
+          <span class="block text-lg font-bold text-primer-700">AMITRA</span>
           <span class="block truncate text-xs text-slate-500">LPM Soegijapranata</span>
         </a>
         <button type="button" class="ml-auto rounded-md p-1 text-slate-500 hover:bg-slate-100 lg:hidden" @click="menu = false">
@@ -85,12 +85,12 @@
         {% else %}
           <a href="{% url 'beranda' %}" class="flex items-center gap-2">
             <img src="{% static 'img/logo-scu.svg' %}" alt="" class="h-8 w-auto">
-            <span class="text-lg font-bold text-primer-700">SI-AMI v2</span>
+            <span class="text-lg font-bold text-primer-700">AMITRA</span>
           </a>
         {% endif %}
         <nav aria-label="Remah roti" class="min-w-0 flex-1">
           <ol class="flex min-w-0 items-center gap-1.5 overflow-hidden text-sm whitespace-nowrap text-slate-500 [&>li:last-child]:font-semibold [&>li:last-child]:text-slate-900">
-            <li class="hidden sm:block"><a href="{% url 'beranda' %}" class="hover:text-slate-800">SI-AMI</a></li>
+            <li class="hidden sm:block"><a href="{% url 'beranda' %}" class="hover:text-slate-800">AMITRA</a></li>
             {% block remah %}{% endblock remah %}
           </ol>
         </nav>
@@ -142,7 +142,7 @@
     <footer class="border-t border-slate-200 bg-white">
       <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-slate-500 sm:px-6 lg:px-8">
         <p>© {% now "Y" %} Lembaga Penjaminan Mutu (LPM) · Soegijapranata Catholic University</p>
-        <p>SI-AMI v2</p>
+        <p>AMITRA</p>
       </div>
     </footer>
   </div>

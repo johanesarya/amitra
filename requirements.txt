@@ -8,6 +8,10 @@ weasyprint>=62
 
 # Produksi: broker antrean Redis
 redis>=5
+# Produksi: driver PostgreSQL dan server WSGI (gunicorn di Linux, waitress di Windows)
+psycopg[binary]>=3.2
+gunicorn>=23; sys_platform != "win32"
+waitress>=3.0; sys_platform == "win32"
 
 # Tes
 pytest>=8

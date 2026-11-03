@@ -23,7 +23,7 @@ def _ya_tidak(nilai):
 def _judul(ws, teks_judul, kolom):
     ws.append([teks_judul])
     ws["A1"].font = Font(bold=True, size=12)
-    ws.append([f"Dibuat {timezone.localtime():%d-%m-%Y %H.%M} oleh SI-AMI"])
+    ws.append([f"Dibuat {timezone.localtime():%d-%m-%Y %H.%M} oleh AMITRA"])
     ws.append([])
     ws.append(kolom)
     for sel in ws[ws.max_row]:

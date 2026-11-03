@@ -184,7 +184,7 @@ class Command(BaseCommand):
         hari_ini = timezone.localdate()
         institusi = PengaturanInstitusi.muat()
         if not institusi.nama_institusi:
-            institusi.nama_institusi = "Universitas Demo SI-AMI"
+            institusi.nama_institusi = "Universitas Demo AMITRA"
             institusi.kop = "Jl. Contoh No. 1, Kota Demo · lpm@demo.local"
             institusi.save()
 

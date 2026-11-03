@@ -1,6 +1,6 @@
 Yth. {{ pengguna.get_full_name }},
 
-LPM mengundang Anda menggunakan SI-AMI (Sistem Informasi Audit Mutu Internal) dengan akun tamu {{ pengguna.email }}.
+LPM mengundang Anda menggunakan AMITRA (Sistem Informasi Audit Mutu Internal) dengan akun tamu {{ pengguna.email }}.
 
 Tetapkan password Anda melalui tautan berikut (berlaku terbatas):
 {{ tautan }}
@@ -8,5 +8,5 @@ Tetapkan password Anda melalui tautan berikut (berlaku terbatas):
 Setelah itu, masuk di {{ situs }}/akun/login/ dengan email dan password tersebut.
 
 --
-SI-AMI · Lembaga Penjaminan Mutu
+AMITRA · Lembaga Penjaminan Mutu
 Email ini dikirim otomatis; mohon tidak membalas.

@@ -59,7 +59,7 @@ def beri_tahu(penerima, *, jenis, judul, pesan="", tautan="", audit=None, email=
                 "umum", {"pengguna": user, "judul": judul, "pesan": pesan, "tautan": url_penuh(tautan), "audit": audit}
             )
             antre_email(
-                penerima=user.email, pengguna=user, audit=audit, jenis=jenis, subjek=f"[SI-AMI] {judul}",
+                penerima=user.email, pengguna=user, audit=audit, jenis=jenis, subjek=f"[AMITRA] {judul}",
                 isi_teks=teks, isi_html=html, kunci=f"{kunci}:{user.pk}" if kunci else None,
             )
     return hasil

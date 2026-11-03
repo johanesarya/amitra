@@ -1,10 +1,12 @@
-# BRD — SI-AMI v2 (Sistem Informasi Audit Mutu Internal SCU)
+# BRD — AMITRA v2 (Sistem Informasi Audit Mutu Internal SCU)
+
+> Nama aplikasi: **AMITRA**. Nama kerja "SI-AMI v2" di dokumen ini dan nama berkasnya merujuk ke aplikasi yang sama.
 
 31 Oktober 2026 · Johanes Arya Pramesta Nugraha
 
 ## 1. Ringkasan Eksekutif & Latar Belakang
 
-SI-AMI v2 menggantikan v1 (amitra.cloud) dengan aturan penilaian yang mengikuti Daftar Tilik LPM SCU: 1 auditee dinilai minimal 3 auditor (jumlah ganjil), nilai efektif dibandingkan KKM 75, dan deviasi antar-auditor di atas 10 poin dengan nilai efektif minimal 75 memicu tindak lanjut. Masalah v1 bukan terutama soal bahasa pemrograman, melainkan logika bisnis yang tidak sama dengan proses klien, alur UI yang membingungkan, dan infrastruktur shared hosting yang tidak siap untuk akses serentak menjelang deadline.
+AMITRA v2 menggantikan v1 (amitra.cloud) dengan aturan penilaian yang mengikuti Daftar Tilik LPM SCU: 1 auditee dinilai minimal 3 auditor (jumlah ganjil), nilai efektif dibandingkan KKM 75, dan deviasi antar-auditor di atas 10 poin dengan nilai efektif minimal 75 memicu tindak lanjut. Masalah v1 bukan terutama soal bahasa pemrograman, melainkan logika bisnis yang tidak sama dengan proses klien, alur UI yang membingungkan, dan infrastruktur shared hosting yang tidak siap untuk akses serentak menjelang deadline.
 
 **Kondisi saat ini (as-is).** Sebelum v1, AMI dikelola manual dengan spreadsheet Daftar Tilik per unit (sheet Identitas AMI, Daftar Tilik, Temuan Kelebihan, Temuan KTS/OB, Peluang Peningkatan, PTK). Rekap lintas unit, notifikasi deadline, dan arsip lintas periode dikerjakan tangan oleh LPM.
 
@@ -382,7 +384,7 @@ Semua PDF memakai kop dan nomor formulir LPM (mis. 064-00/Unika/LPM/R-Q untuk Pr
 
 ## 9. Rekomendasi Arsitektur & Teknologi
 
-Keputusan: SI-AMI v2 dibangun ulang dengan **Python + Django + HTMX**, PostgreSQL, Redis, dan worker antrean Django-Q2, di-deploy di VPS/cloud, bukan shared hosting cPanel. Bahasa pemrograman bukan penyebab v1 lambat saat diakses bersamaan. Penyebabnya adalah pekerjaan berat (PDF, email) yang dijalankan di dalam request web, ditambah hosting yang membatasi jumlah proses; kedua hal itu diselesaikan oleh arsitektur di bawah, apa pun bahasanya.
+Keputusan: AMITRA v2 dibangun ulang dengan **Python + Django + HTMX**, PostgreSQL, Redis, dan worker antrean Django-Q2, di-deploy di VPS/cloud, bukan shared hosting cPanel. Bahasa pemrograman bukan penyebab v1 lambat saat diakses bersamaan. Penyebabnya adalah pekerjaan berat (PDF, email) yang dijalankan di dalam request web, ditambah hosting yang membatasi jumlah proses; kedua hal itu diselesaikan oleh arsitektur di bawah, apa pun bahasanya.
 
 **Mengapa Django + HTMX.** Sebagian besar modul v1 memang harus dibangun ulang (Bab 10.1), jadi meninggalkan kode Laravel tidak banyak merugikan. Django sudah membawa login, hak akses, form, migrasi database, dan Django Admin untuk master data LPM, sehingga kode yang harus ditulis (dan diperiksa saat vibe coding) jauh lebih sedikit. Pengembang sudah terbiasa dengan Python, openpyxl, dan WeasyPrint, sehingga logika rumus Bab 6 bisa dibaca dan diverifikasi sendiri. HTMX membuat halaman interaktif tanpa memisahkan proyek frontend dan backend.
 

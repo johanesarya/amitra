@@ -10,3 +10,6 @@ staticfiles/
 
 # Dokumen asli klien (data pribadi, berkas besar); tidak masuk repo.
 docs/referensi/
+
+# Paket kode untuk dikirim (dibuat dengan git archive).
+dist/

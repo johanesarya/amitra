@@ -5,6 +5,7 @@ layanan cukup memanggil `catat(...)` tanpa meneruskan request.
 """
 
 import hashlib
+import ipaddress
 import json
 from contextvars import ContextVar
 
@@ -26,14 +27,27 @@ class JejakMiddleware:
             _request.reset(token)
 
 
+def _ip_sah(teks):
+    """IP tanpa port ("1.2.3.4:5678" dari IIS ARR, "[::1]:5678"); None bila tidak sah (kolom inet di PostgreSQL)."""
+    teks = (teks or "").strip()
+    if teks.startswith("["):
+        teks = teks[1:].split("]", 1)[0]
+    elif teks.count(":") == 1:
+        teks = teks.split(":", 1)[0]
+    try:
+        return str(ipaddress.ip_address(teks))
+    except ValueError:
+        return None
+
+
 def _ip(request):
     if request is None:
         return None
     if getattr(settings, "PERCAYA_PROXY", False):
-        diteruskan = request.META.get("HTTP_X_FORWARDED_FOR", "")
+        diteruskan = _ip_sah(request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0])
         if diteruskan:
-            return diteruskan.split(",")[0].strip() or None
-    return request.META.get("REMOTE_ADDR") or None
+            return diteruskan
+    return _ip_sah(request.META.get("REMOTE_ADDR"))
 
 
 def _aman_json(data):

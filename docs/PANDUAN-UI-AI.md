@@ -1,4 +1,4 @@
-# Panduan UI SI-AMI v2 (brief desain)
+# Panduan UI AMITRA (brief desain)
 
 Dokumen ini adalah **rujukan desain**: konteks produk, aturan, sistem desain, inventaris halaman, dan cara
 memasukkan hasil rancangan ke aplikasi. **Prompt siap tempel ada di berkas terpisah:
@@ -20,7 +20,7 @@ Hasil AI dipakai sebagai **rancangan tampilan**. Logika, data, dan hak akses tet
 
 ## 2. Konteks produk
 
-**SI-AMI v2** adalah Sistem Informasi Audit Mutu Internal untuk Lembaga Penjaminan Mutu (LPM)
+**AMITRA** adalah Sistem Informasi Audit Mutu Internal untuk Lembaga Penjaminan Mutu (LPM)
 Soegijapranata Catholic University (SCU). Satu siklus AMI:
 
 ```
