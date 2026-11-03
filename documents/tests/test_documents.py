@@ -283,6 +283,16 @@ def test_unduh_excel_daftar_tilik(client, audit_final, admin_lpm):
     assert client.get(reverse("documents:unduh", args=[audit_final.pk, d.pk, "scan"])).status_code == 404
 
 
+def test_admin_django_mengunduh_lewat_pemeriksaan_hak_akses(client, audit_final, admin_lpm):
+    """NFR-08: /media/ tidak dilayani; admin Django menautkan ke view unduh, bukan ke berkas langsung."""
+    d = Dokumen.objects.get(audit=audit_final, jenis=JenisDokumen.DAFTAR_TILIK)
+    client.force_login(admin_lpm)
+    isi = client.get(reverse("admin:documents_dokumen_change", args=[d.pk])).content.decode()
+    assert reverse("documents:unduh", args=[audit_final.pk, d.pk, "pdf"]) in isi
+    assert reverse("documents:unduh", args=[audit_final.pk, d.pk, "excel"]) in isi
+    assert "/media/" not in isi
+
+
 def test_halaman_dokumen_dan_polling(client, audit_dinilai, admin_lpm):
     client.force_login(admin_lpm)
     isi = client.get(reverse("documents:daftar", args=[audit_dinilai.pk])).content.decode()
