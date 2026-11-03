@@ -353,7 +353,7 @@ cd C:\amitra
 
 # Aplikasi web (waitress)
 .\nssm.exe install amitra-web C:\amitra\app\.venv\Scripts\waitress-serve.exe
-.\nssm.exe set amitra-web AppParameters "--listen=127.0.0.1:8000 --threads=8 config.wsgi:application"
+.\nssm.exe set amitra-web AppParameters "--listen=127.0.0.1:8000 --threads=8 --trusted-proxy=127.0.0.1 --trusted-proxy-headers=x-forwarded-proto --no-clear-untrusted-proxy-headers config.wsgi:application"
 .\nssm.exe set amitra-web AppDirectory C:\amitra\app
 .\nssm.exe set amitra-web AppStdout C:\amitra\log\web.log
 .\nssm.exe set amitra-web AppStderr C:\amitra\log\web.log
@@ -370,6 +370,8 @@ cd C:\amitra
 Start-Service amitra-web, amitra-worker
 Get-Service amitra-*
 ```
+
+**Opsi `--trusted-proxy` wajib ada.** Tanpa opsi itu, waitress membuang header `X-Forwarded-Proto` dari IIS, sehingga aplikasi mengira semua koneksi HTTP: halaman terus dialihkan ke HTTPS dan login Google gagal. Opsi `--no-clear-untrusted-proxy-headers` membiarkan header `X-Forwarded-For` sampai ke aplikasi, agar IP pengguna tercatat di log audit.
 
 Secara bawaan, layanan berjalan sebagai Local System. Bila memakai akun layanan khusus (`nssm set amitra-web ObjectName ...`), pastikan akun itu punya hak tulis ke folder media dan folder log.
 
@@ -599,7 +601,7 @@ python manage.py check --deploy
 | Login Google ditolak untuk akun kampus | `DOMAIN_EMAIL_KAMPUS` salah | Isi `unika.ac.id`, lalu restart layanan web |
 | `Bad Request (400)` | Domain tidak ada di `ALLOWED_HOSTS`, atau IIS tidak meneruskan Host asli | Periksa `ALLOWED_HOSTS`; di IIS jalankan perintah `preserveHostHeader` (5.6 langkah 2) |
 | `403 CSRF verification failed` saat menyimpan formulir | Origin HTTPS tidak dikenali | Isi `CSRF_TRUSTED_ORIGINS=https://<domain>` dan pastikan `X-Forwarded-Proto` terkirim |
-| Halaman terus dialihkan (redirect loop) | `SECURE_SSL_REDIRECT=True` tetapi proxy tidak mengirim `X-Forwarded-Proto: https` | Perbaiki header di proxy, atau sementara `SECURE_SSL_REDIRECT=False` |
+| Halaman terus dialihkan (redirect loop) | `SECURE_SSL_REDIRECT=True` tetapi `X-Forwarded-Proto: https` tidak sampai ke aplikasi | Periksa header di proxy. Di Windows, pastikan parameter waitress memuat `--trusted-proxy=127.0.0.1 --trusted-proxy-headers=x-forwarded-proto` (5.5). Sementara bisa `SECURE_SSL_REDIRECT=False` |
 | Halaman tampil polos tanpa warna | Static belum dikumpulkan atau tidak terlayani | `collectstatic`; periksa `alias` Nginx atau virtual directory IIS |
 | Dokumen berstatus "Diantre" terus, muncul peringatan antrean tertahan | Worker `qcluster` tidak berjalan | Jalankan/restart layanan `amitra-worker`; periksa lognya |
 | Dokumen berstatus "Gagal" dengan pesan Pango/GTK | Pustaka Pango tidak ditemukan | Linux: pasang paket di 4.1. Windows: pasang Pango lewat MSYS2 dan isi `WEASYPRINT_DLL_DIRECTORIES` |
