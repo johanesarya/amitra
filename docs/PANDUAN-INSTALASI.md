@@ -1,10 +1,23 @@
-# Panduan Instalasi AMITRA di Server Linux dan Windows
+# Panduan Instalasi AMITRA di Server Linux atau Windows
 
 Panduan ini untuk tim server (BMSI) yang memasang **AMITRA**, Sistem Informasi Audit Mutu Internal milik LPM Soegijapranata Catholic University, di server produksi.
 
 **AMITRA dibuat dengan Python (Django), bukan PHP.** Aplikasi ini tidak berjalan di hosting PHP/cPanel biasa. Server harus bisa menjalankan Python sebagai layanan yang terus hidup, di belakang web server yang menangani HTTPS.
 
 Di seluruh panduan, `amitra.unika.ac.id` hanya contoh domain. Ganti dengan domain yang benar-benar dipakai.
+
+### Cara memakai panduan ini
+
+AMITRA cukup dipasang di **satu** server: Linux **atau** Windows, sesuai yang tersedia di BMSI. Panduan ini memuat langkah untuk keduanya; ikuti hanya jalur yang sesuai.
+
+| Bagian | Server Linux | Server Windows |
+|---|:-:|:-:|
+| 1–3. Gambaran, kebutuhan, persiapan Google OAuth dan email | Ya | Ya |
+| 4. Instalasi di Linux | **Ya** | Lewati |
+| 5. Instalasi di Windows Server | Lewati | **Ya** |
+| 6–12. `.env`, inisialisasi, pemeriksaan, backup, pembaruan, masalah, serah terima | Ya | Ya (ikuti catatan khusus Windows di tiap bagian) |
+
+Bila pilihan masih terbuka, **Linux lebih disarankan**: semua komponen (termasuk Redis) tersedia resmi, dan biaya lisensinya tidak ada. Windows Server tetap didukung penuh.
 
 ---
 
@@ -452,15 +465,23 @@ EMAIL_HOST_USER=amitra-noreply@unika.ac.id
 EMAIL_HOST_PASSWORD=<App Password>
 DEFAULT_FROM_EMAIL=AMITRA LPM <amitra-noreply@unika.ac.id>
 
-# Linux: redis://127.0.0.1:6379/0 — Windows tanpa Redis: kosongkan
-REDIS_URL=redis://127.0.0.1:6379/0
 Q_WORKERS=2
-
-MEDIA_ROOT=/var/lib/amitra/media
 SECURE_SSL_REDIRECT=True
 SECURE_HSTS_SECONDS=0
 LOG_LEVEL=WARNING
+
+# --- Baris di bawah ini berbeda untuk Linux dan Windows (lihat tabel) ---
+REDIS_URL=redis://127.0.0.1:6379/0
+MEDIA_ROOT=/var/lib/amitra/media
 ```
+
+Baris yang berbeda per server, pilih sesuai server yang dipakai:
+
+| Variabel | Server Linux | Server Windows |
+|---|---|---|
+| `REDIS_URL` | `redis://127.0.0.1:6379/0` | Kosongkan (`REDIS_URL=`) |
+| `MEDIA_ROOT` | `/var/lib/amitra/media` | `D:\amitra-data\media` |
+| `WEASYPRINT_DLL_DIRECTORIES` | Tidak perlu | `C:\msys64\mingw64\bin` |
 
 Membuat `SECRET_KEY` baru (wajib berbeda untuk setiap server):
 
